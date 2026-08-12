@@ -31,7 +31,6 @@ export default function ContactPage() {
     null
   );
 
-  // TanStack Query: daftar kontak dari GET /api/v1/contacts.
   const {
     data: contacts = [],
     isLoading,

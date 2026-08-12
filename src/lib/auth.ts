@@ -1,11 +1,7 @@
 // src/lib/auth.ts
 "use client";
 
-import {
-  AUTH_TOKEN_KEY,
-  AUTH_USER_KEY,
-  AUTH_TOKEN_COOKIE,
-} from "./auth-keys";
+import { AUTH_TOKEN_KEY, AUTH_USER_KEY, AUTH_TOKEN_COOKIE } from "./auth-keys";
 
 const AUTH_EVENT = "seen-family-auth";
 const TOKEN_COOKIE = AUTH_TOKEN_COOKIE;
@@ -61,9 +57,12 @@ export function setSession(data: GoogleAuthResponse): void {
       userId: data.userId,
       email: data.email,
       name: data.name,
-    } as AuthUser)
+    } as AuthUser),
   );
-  setTokenCookie(data.accessToken, data.expiresIn > 0 ? data.expiresIn : 60 * 60);
+  setTokenCookie(
+    data.accessToken,
+    data.expiresIn > 0 ? data.expiresIn : 60 * 60,
+  );
   emitAuthEvent();
 }
 
@@ -86,7 +85,7 @@ export function getAuthUser(): AuthUser | null {
 }
 
 export async function loginWithGoogle(
-  idToken: string
+  idToken: string,
 ): Promise<GoogleAuthResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/google`, {
     method: "POST",
@@ -109,7 +108,7 @@ export async function loginWithGoogle(
 
 export async function apiFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const token = getAccessToken();
 

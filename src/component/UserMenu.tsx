@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, ChevronDown } from "lucide-react";
 import { clearSession } from "@/lib/auth";
 import { AUTH_USER_KEY } from "@/lib/auth-keys";
@@ -39,6 +40,7 @@ function parseAuthUserSnapshot(snapshot: string | null): AuthUser | null {
 
 export default function UserMenu() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const userSnapshot = useSyncExternalStore(
     subscribeAuthUser,
@@ -69,6 +71,7 @@ export default function UserMenu() {
   const handleLogout = () => {
     setOpen(false);
     clearSession();
+    queryClient.clear();
     router.replace("/login");
   };
 

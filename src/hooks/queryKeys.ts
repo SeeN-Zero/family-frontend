@@ -53,3 +53,9 @@ export const loanPaymentKeys = {
   list: (loanId: string, page?: number, size?: number) =>
     ["loans", "payments", loanId, { page, size }] as const,
 };
+
+export const familyKeys = {
+  all: ["family"] as const,
+  me: () => ["family", "me"] as const,
+  members: () => ["family", "members"] as const,
+};

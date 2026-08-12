@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, Users, AppWindow, X, KeyRound, Mail } from "lucide-react";
+import { User, Users, AppWindow, X, Copy, Check, LogOut, Trash2, UserPlus } from "lucide-react";
 import {
   appSettingsSchema,
   profileSettingsSchema,
@@ -12,22 +12,23 @@ import {
   type ProfileSettingsInput,
   type ProfileSettingsValues,
 } from "@/features/settings/schemas";
+import {
+  createFamilySchema,
+  joinFamilySchema,
+  type CreateFamilyInput,
+  type JoinFamilyInput,
+} from "@/features/family/schemas";
+import { useMyFamily, useFamilyMembers } from "@/hooks/useFamily";
+import {
+  useCreateFamily,
+  useJoinFamily,
+  useDeleteFamily,
+  useLeaveFamily,
+  useRemoveMember,
+} from "@/hooks/useFamilyMutations";
+import type { CreateFamilyRequest, JoinFamilyRequest, Title } from "@/hooks/types";
 
 type TabId = "profile" | "family" | "app";
-
-type FamilyMember = {
-  id: string;
-  name: string;
-  title: string;
-  role: string;
-  isAdmin?: boolean;
-};
-
-const INITIAL_MEMBERS: FamilyMember[] = [
-  { id: "fm1", name: "SENNA ANNABA AHMAD", title: "FATHER", role: "ADMIN", isAdmin: true },
-  { id: "fm2", name: "SHAYIDA RACHIEMMA", title: "MOTHER", role: "MEMBER" },
-  { id: "fm3", name: "AHMAD FAUZAN", title: "CHILD", role: "MEMBER" },
-];
 
 const TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "profile", label: "PROFILE", icon: User },
@@ -35,10 +36,30 @@ const TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "app", label: "APP", icon: AppWindow },
 ];
 
+const TITLE_LABELS: Record<Title, string> = {
+  FATHER: "FATHER",
+  MOTHER: "MOTHER",
+  CHILD: "CHILD",
+};
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("profile");
-  const [members, setMembers] = useState(INITIAL_MEMBERS);
   const [isSaved, setIsSaved] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showJoinForm, setShowJoinForm] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [removingMember, setRemovingMember] = useState<string | null>(null);
+
+  const { data: family, isLoading: familyLoading } = useMyFamily();
+  const { data: members = [], isLoading: membersLoading } = useFamilyMembers();
+  const createFamily = useCreateFamily();
+  const joinFamily = useJoinFamily();
+  const deleteFamily = useDeleteFamily();
+  const leaveFamily = useLeaveFamily();
+  const removeMember = useRemoveMember();
+
   const profileForm = useForm<ProfileSettingsInput, unknown, ProfileSettingsValues>({
     resolver: zodResolver(profileSettingsSchema),
     defaultValues: { username: "SENNA ANNABA AHMAD" },
@@ -47,14 +68,64 @@ export default function SettingsPage() {
     resolver: zodResolver(appSettingsSchema),
     defaultValues: { cycleStartDay: 1 },
   });
-
-  const handleRemoveMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-  };
+  const createFamilyForm = useForm<CreateFamilyInput, unknown, CreateFamilyRequest>({
+    resolver: zodResolver(createFamilySchema),
+    defaultValues: { name: "", title: "FATHER" },
+  });
+  const joinFamilyForm = useForm<JoinFamilyInput, unknown, JoinFamilyRequest>({
+    resolver: zodResolver(joinFamilySchema),
+    defaultValues: { inviteCode: "", title: "FATHER" },
+  });
 
   const showSaved = () => {
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const handleCreateFamily = (payload: CreateFamilyRequest) => {
+    createFamily.mutate(payload, {
+      onSuccess: () => {
+        setShowCreateForm(false);
+        createFamilyForm.reset();
+      },
+    });
+  };
+
+  const handleJoinFamily = (payload: JoinFamilyRequest) => {
+    joinFamily.mutate(payload, {
+      onSuccess: () => {
+        setShowJoinForm(false);
+        joinFamilyForm.reset();
+      },
+    });
+  };
+
+  const handleCopyInviteCode = () => {
+    if (family?.inviteCode) {
+      navigator.clipboard.writeText(family.inviteCode);
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2000);
+    }
+  };
+
+  const handleDeleteFamily = () => {
+    if (family?.familyId) {
+      deleteFamily.mutate(family.familyId, {
+        onSuccess: () => setConfirmDelete(false),
+      });
+    }
+  };
+
+  const handleLeaveFamily = () => {
+    leaveFamily.mutate(undefined, {
+      onSuccess: () => setConfirmLeave(false),
+    });
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    removeMember.mutate(memberId, {
+      onSuccess: () => setRemovingMember(null),
+    });
   };
 
   return (
@@ -135,7 +206,7 @@ export default function SettingsPage() {
                         readOnly
                         className="w-full bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-outline focus:outline-none cursor-not-allowed pr-11"
                       />
-                      <Mail className="w-4 h-4 text-outline absolute right-4 top-1/2 -translate-y-1/2" />
+                      
                     </div>
                   </div>
 
@@ -153,69 +224,161 @@ export default function SettingsPage() {
 
             {activeTab === "family" && (
               <div className="flex flex-col gap-5">
-                <h4 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
-                  * FAMILY
-                </h4>
+                {familyLoading ? (
+                  <>
+                    <h4 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
+                      * FAMILY
+                    </h4>
+                    <div className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">
+                      LOADING...
+                    </div>
+                  </>
+                ) : !family ? (
+                  <>
+                    <h4 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
+                      * FAMILY
+                    </h4>
+                    <div className="px-4 py-8 text-center border border-outline-variant">
+                      <p className="font-body-lg text-body-lg text-on-surface-variant mb-4">
+                        YOU_ARE_NOT_IN_A_FAMILY_YET
+                      </p>
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateForm(true)}
+                          className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer"
+                        >
+                          CREATE_FAMILY
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowJoinForm(true)}
+                          className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                        >
+                          JOIN_FAMILY
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
+                      * FAMILY
+                    </h4>
 
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-                    INVITATION_CODE
-                  </label>
-                  <div className="border border-dashed border-primary px-4 py-3 flex items-center justify-between gap-3">
-                    <span className="font-body-sm text-body-sm text-primary tracking-widest">
-                      SEEN-FAM-2026
-                    </span>
-                    <KeyRound className="w-4 h-4 text-primary shrink-0" />
-                  </div>
-                </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                        FAMILY_NAME
+                      </label>
+                      <span className="font-display-lg text-display-lg text-primary">
+                        {family.name}
+                      </span>
+                    </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-                    MEMBERS
-                  </label>
-                  <div className="border border-outline-variant divide-y divide-outline-variant">
-                    {members.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center gap-4 px-4 py-3"
-                      >
-                        <span className="w-8 h-8 flex items-center justify-center bg-primary shrink-0">
-                          <span className="font-label-caps text-label-caps text-background">
-                            {member.name.charAt(0)}
-                          </span>
+                    <div className="flex flex-col gap-2">
+                      <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                        YOUR_ROLE
+                      </label>
+                      <span className="font-body-lg text-body-lg text-primary uppercase">
+                        {TITLE_LABELS[family.title]} ({family.role})
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                        INVITE_CODE
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <span className="font-display-lg text-display-lg text-primary">
+                          {family.inviteCode}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-body-sm text-body-sm text-primary uppercase truncate">
-                            {member.name}
-                          </div>
-                          <div className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-                            {member.title} • {member.role}
-                          </div>
+                        <button
+                          type="button"
+                          onClick={handleCopyInviteCode}
+                          className="flex items-center gap-2 border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                        >
+                          {copiedInvite ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          {copiedInvite ? "COPIED" : "COPY"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                        MEMBERS ({members.length})
+                      </label>
+                      {membersLoading ? (
+                        <div className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">
+                          LOADING_MEMBERS...
                         </div>
-                        {member.isAdmin ? (
-                          <span className="flex items-center gap-1 font-label-caps text-label-caps text-primary uppercase tracking-wider shrink-0">
-                            <KeyRound className="w-3 h-3" />
-                            ADMIN
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMember(member.id)}
-                            className="flex items-center gap-1 border border-outline-variant px-2 py-1 font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer shrink-0"
+                      ) : members.length === 0 ? (
+                        <div className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">
+                          NO_FAMILY_MEMBERS
+                        </div>
+                      ) : (
+                        members.map((member) => (
+                          <div
+                            key={member.memberId}
+                            className="flex items-center justify-between border border-outline-variant px-4 py-3 gap-4"
                           >
-                            <X className="w-3 h-3" />
-                            REMOVE
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    {members.length === 0 && (
-                      <div className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">
-                        NO_FAMILY_MEMBERS
-                      </div>
-                    )}
-                  </div>
-                </div>
+                            <div className="flex flex-col gap-1 min-w-0 flex-1">
+                              <span className="font-body-lg text-body-lg text-primary">
+                                {member.name}
+                              </span>
+                              <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                                {TITLE_LABELS[member.title]}
+                              </span>
+                            </div>
+                            {member.role === "OWNER" ? (
+                              <span className="flex items-center gap-1 border border-primary px-2 py-1 font-label-caps text-label-caps text-primary uppercase tracking-wider shrink-0">
+                                <UserPlus className="w-3 h-3" />
+                                OWNER
+                              </span>
+                            ) : family.role === "OWNER" ? (
+                              <button
+                                type="button"
+                                onClick={() => setRemovingMember(member.memberId)}
+                                disabled={removeMember.isPending}
+                                className="flex items-center gap-1 border border-outline-variant px-2 py-1 font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                <X className="w-3 h-3" />
+                                REMOVE
+                              </button>
+                            ) : (
+                              <span className="flex items-center gap-1 px-2 py-1 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider shrink-0">
+                                MEMBER
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-outline-variant">
+                      {family.role === "OWNER" ? (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(true)}
+                          disabled={deleteFamily.isPending}
+                          className="flex items-center justify-center gap-2 border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          DELETE_FAMILY
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmLeave(true)}
+                          disabled={leaveFamily.isPending}
+                          className="flex items-center justify-center gap-2 border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          LEAVE_FAMILY
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -271,6 +434,269 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Family Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setShowCreateForm(false)} />
+          <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">CREATE_FAMILY</h3>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                disabled={createFamily.isPending}
+                className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {createFamily.error && (
+              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
+                * {createFamily.error.message}
+              </p>
+            )}
+            <form onSubmit={createFamilyForm.handleSubmit(handleCreateFamily)} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="create-family-name" className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                  FAMILY_NAME
+                </label>
+                <input
+                  id="create-family-name"
+                  type="text"
+                  {...createFamilyForm.register("name")}
+                  placeholder="e.g. Smith Family"
+                  required
+                  disabled={createFamily.isPending}
+                  className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors disabled:opacity-40"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="create-family-title" className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                  YOUR_TITLE
+                </label>
+                <select
+                  id="create-family-title"
+                  {...createFamilyForm.register("title")}
+                  required
+                  disabled={createFamily.isPending}
+                  className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  <option value="FATHER">FATHER</option>
+                  <option value="MOTHER">MOTHER</option>
+                  <option value="CHILD">CHILD</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  disabled={createFamily.isPending}
+                  className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={createFamily.isPending}
+                  className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {createFamily.isPending ? "CREATING..." : "CREATE"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Join Family Modal */}
+      {showJoinForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setShowJoinForm(false)} />
+          <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">JOIN_FAMILY</h3>
+              <button
+                type="button"
+                onClick={() => setShowJoinForm(false)}
+                disabled={joinFamily.isPending}
+                className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {joinFamily.error && (
+              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
+                * {joinFamily.error.message}
+              </p>
+            )}
+            <form onSubmit={joinFamilyForm.handleSubmit(handleJoinFamily)} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="join-invite-code" className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                  INVITE_CODE
+                </label>
+                <input
+                  id="join-invite-code"
+                  type="text"
+                  {...joinFamilyForm.register("inviteCode")}
+                  placeholder="e.g. ABCD1234EF"
+                  maxLength={10}
+                  required
+                  disabled={joinFamily.isPending}
+                  className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors disabled:opacity-40"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="join-family-title" className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                  YOUR_TITLE
+                </label>
+                <select
+                  id="join-family-title"
+                  {...joinFamilyForm.register("title")}
+                  required
+                  disabled={joinFamily.isPending}
+                  className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  <option value="FATHER">FATHER</option>
+                  <option value="MOTHER">MOTHER</option>
+                  <option value="CHILD">CHILD</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowJoinForm(false)}
+                  disabled={joinFamily.isPending}
+                  className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={joinFamily.isPending}
+                  className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {joinFamily.isPending ? "JOINING..." : "JOIN"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Family Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setConfirmDelete(false)} />
+          <div className="relative w-full max-w-md border border-primary bg-background p-6 md:p-8 bracket-corners">
+            <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider mb-4">
+              DELETE_FAMILY?
+            </h3>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+              THIS_WILL_REMOVE_ALL_MEMBERS_AND_DELETE_THE_FAMILY_PERMANENTLY
+            </p>
+            {deleteFamily.error && (
+              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
+                * {deleteFamily.error.message}
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleteFamily.isPending}
+                className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteFamily}
+                disabled={deleteFamily.isPending}
+                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleteFamily.isPending ? "DELETING..." : "DELETE"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Family Modal */}
+      {confirmLeave && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setConfirmLeave(false)} />
+          <div className="relative w-full max-w-md border border-primary bg-background p-6 md:p-8 bracket-corners">
+            <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider mb-4">
+              LEAVE_FAMILY?
+            </h3>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+              YOU_WILL_NO_LONGER_BE_PART_OF_THIS_FAMILY
+            </p>
+            {leaveFamily.error && (
+              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
+                * {leaveFamily.error.message}
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmLeave(false)}
+                disabled={leaveFamily.isPending}
+                className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={handleLeaveFamily}
+                disabled={leaveFamily.isPending}
+                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {leaveFamily.isPending ? "LEAVING..." : "LEAVE"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Member Modal */}
+      {removingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setRemovingMember(null)} />
+          <div className="relative w-full max-w-md border border-primary bg-background p-6 md:p-8 bracket-corners">
+            <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider mb-4">
+              REMOVE_MEMBER?
+            </h3>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+              THIS_MEMBER_WILL_BE_REMOVED_FROM_THE_FAMILY
+            </p>
+            {removeMember.error && (
+              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
+                * {removeMember.error.message}
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRemovingMember(null)}
+                disabled={removeMember.isPending}
+                className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRemoveMember(removingMember)}
+                disabled={removeMember.isPending}
+                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {removeMember.isPending ? "REMOVING..." : "REMOVE"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

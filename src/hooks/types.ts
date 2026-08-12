@@ -20,6 +20,15 @@ export type {
   CreateTransferRequest,
   UpdateTransactionRequest,
 } from "@/features/transactions/schemas";
+export type {
+  CreateFamilyRequest,
+  JoinFamilyRequest,
+  Title as TitleInput,
+  Role as RoleInput,
+} from "@/features/family/schemas";
+
+export type Title = "FATHER" | "MOTHER" | "CHILD";
+export type Role = "OWNER" | "MEMBER";
 
 
 // API entity types matching the backend (Java/Quarkus) REST responses.
@@ -126,6 +135,22 @@ export type ApiPage<T> = {
   totalPages: number;
   first: boolean;
   last: boolean;
+};
+
+export type ApiFamily = {
+  familyId: string;
+  name: string;
+  inviteCode: string;
+  role: Role;
+  title: Title;
+};
+
+export type ApiFamilyMember = {
+  memberId: string;
+  name: string;
+  email: string;
+  role: Role;
+  title: Title;
 };
 
 // ---------------------------------------------------------------------------
