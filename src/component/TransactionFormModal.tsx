@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   X,
   ArrowUpCircle,
@@ -8,7 +10,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { todayISO } from "@/lib/date";
-import { formatRupiah, parseRupiah } from "@/lib/currency";
+import { formatRupiah } from "@/lib/currency";
+import { createTransactionSchema, type CreateTransactionInput } from "@/features/transactions/schemas";
 import type {
   ApiCategory,
   ApiTransaction,
@@ -47,40 +50,29 @@ export default function TransactionFormModal({
     categories.find((cat) => cat.categoryId === transaction?.categoryId) ??
     categories[0];
 
-  const [description, setDescription] = useState(transaction?.description ?? "");
-  const [categoryId, setCategoryId] = useState(initialCategory?.categoryId ?? "");
+  const form = useForm<CreateTransactionInput, unknown, CreateTransactionRequest>({
+    resolver: zodResolver(createTransactionSchema),
+    defaultValues: {
+      accountId,
+      categoryId: initialCategory?.categoryId ?? "",
+      amount: transaction ? formatRupiah(String(transaction.amount)) : "",
+      description: transaction?.description ?? "",
+      transactionDate: transaction?.transactionDate ?? todayISO(),
+    },
+  });
   const [categoryType, setCategoryType] = useState<CategoryTab>(
     initialCategory?.type ?? "EXPENSE"
   );
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [amount, setAmount] = useState(
-    transaction ? formatRupiah(String(transaction.amount)) : ""
-  );
-  const [date, setDate] = useState(transaction?.transactionDate ?? todayISO());
-
+  const categoryId = useWatch({ control: form.control, name: "categoryId" });
+  const amount = String(useWatch({ control: form.control, name: "amount" }) ?? "");
 
   if (!open) return null;
-
   const selectedCategory = categories.find((cat) => cat.categoryId === categoryId);
   const filteredCategories = categories.filter((cat) => cat.type === categoryType);
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount(formatRupiah(e.target.value));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const rawAmount = parseRupiah(amount);
-    const parsedAmount = Number(rawAmount);
-    if (!accountId || !categoryId || !parsedAmount || !date) return;
-
-    onSubmit({
-      accountId,
-      categoryId,
-      amount: parsedAmount,
-      description: description.trim() || undefined,
-      transactionDate: date,
-    });
+  const handleSubmit = (values: CreateTransactionRequest) => {
+    onSubmit(values);
   };
 
   return (
@@ -90,7 +82,7 @@ export default function TransactionFormModal({
       <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
-            {isEdit ? "* EDIT_TRANSACTION_ENTRY" : "* NEW_TRANSACTION_ENTRY"}
+            {isEdit ? "EDIT_TRANSACTION_ENTRY" : "NEW_TRANSACTION_ENTRY"}
           </h3>
           <button
             type="button"
@@ -109,7 +101,7 @@ export default function TransactionFormModal({
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label
               htmlFor="tx-category"
@@ -158,7 +150,7 @@ export default function TransactionFormModal({
                           key={cat.categoryId}
                           type="button"
                           onClick={() => {
-                            setCategoryId(cat.categoryId);
+                            form.setValue("categoryId", cat.categoryId, { shouldDirty: true, shouldValidate: true });
                             setIsCategoryOpen(false);
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-3 font-body-sm text-body-sm transition-colors cursor-pointer text-left ${
@@ -215,8 +207,7 @@ export default function TransactionFormModal({
             <input
               id="tx-description"
               type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              {...form.register("description")}
               placeholder="e.g. Gaji Bulanan / Indomaret Snacks"
               maxLength={255}
               disabled={isPending}
@@ -236,8 +227,14 @@ export default function TransactionFormModal({
                 id="tx-amount"
                 type="text"
                 inputMode="numeric"
+                name="amount"
                 value={amount}
-                onChange={handleAmountChange}
+                onChange={(e) =>
+                  form.setValue("amount", formatRupiah(e.target.value), {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
                 placeholder="0"
                 required
                 disabled={isPending}
@@ -255,8 +252,7 @@ export default function TransactionFormModal({
               <input
                 id="tx-date"
                 type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                {...form.register("transactionDate")}
                 required
                 disabled={isPending}
                 className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors disabled:opacity-40"

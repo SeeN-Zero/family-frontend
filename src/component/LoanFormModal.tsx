@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Plus, ChevronDown } from "lucide-react";
-import { formatRupiah, parseRupiah } from "@/lib/currency";
+import { formatRupiah } from "@/lib/currency";
+import { createLoanSchema, type CreateLoanInput } from "@/features/loans/schemas";
 import { todayISO } from "@/lib/date";
 import { useCreateContact } from "@/hooks/useContactMutations";
 import ContactFormModal from "@/component/ContactFormModal";
@@ -33,45 +36,37 @@ export default function LoanFormModal({
   onClose,
   onSubmit,
 }: LoanFormModalProps) {
-  const [contactId, setContactId] = useState("");
   const [newContactName, setNewContactName] = useState("");
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
-  const [accountId, setAccountId] = useState("");
-  const [type, setType] = useState<LoanType>(defaultType);
-  const [amount, setAmount] = useState("");
-  const [transactionDate, setTransactionDate] = useState(todayISO());
-  const [dueDate, setDueDate] = useState("");
+  const form = useForm<CreateLoanInput, unknown, CreateLoanRequest>({
+    resolver: zodResolver(createLoanSchema),
+    defaultValues: {
+      contactId: "",
+      accountId: "",
+      loanType: defaultType,
+      amount: "",
+      transactionDate: todayISO(),
+      dueDate: "",
+    },
+  });
 
   const createContact = useCreateContact();
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount(formatRupiah(e.target.value));
-  };
+  const contactId = useWatch({ control: form.control, name: "contactId" });
+  const type = useWatch({ control: form.control, name: "loanType" });
+  const amount = String(useWatch({ control: form.control, name: "amount" }) ?? "");
 
   const handleCreateContact = (payload: CreateContactRequest) => {
     createContact.mutate(payload, {
       onSuccess: (created) => {
-        setContactId(created.contactId);
+        form.setValue("contactId", created.contactId, { shouldDirty: true, shouldValidate: true });
         setNewContactName(created.name);
         setIsAddContactOpen(false);
       },
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const rawAmount = Number(parseRupiah(amount));
-    if (!contactId || !accountId || !rawAmount || !transactionDate) return;
-
-    const payload: CreateLoanRequest = {
-      contactId,
-      accountId,
-      loanType: type,
-      amount: rawAmount,
-      transactionDate,
-      dueDate: dueDate || undefined,
-    };
+  const handleSubmit = (payload: CreateLoanRequest) => {
     onSubmit(payload);
     onClose();
   };
@@ -86,7 +81,7 @@ export default function LoanFormModal({
       <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
-            * NEW_LOAN_ENTRY
+            NEW_LOAN_ENTRY
           </h3>
           <button
             type="button"
@@ -105,7 +100,7 @@ export default function LoanFormModal({
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label
               htmlFor="loan-type"
@@ -116,7 +111,7 @@ export default function LoanFormModal({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setType("DEBT")}
+                onClick={() => form.setValue("loanType", "DEBT", { shouldDirty: true, shouldValidate: true })}
                 disabled={isPending}
                 className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
                   type === "DEBT"
@@ -128,7 +123,7 @@ export default function LoanFormModal({
               </button>
               <button
                 type="button"
-                onClick={() => setType("RECEIVABLE")}
+                onClick={() => form.setValue("loanType", "RECEIVABLE", { shouldDirty: true, shouldValidate: true })}
                 disabled={isPending}
                 className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
                   type === "RECEIVABLE"
@@ -180,7 +175,7 @@ export default function LoanFormModal({
                           key={contact.contactId}
                           type="button"
                           onClick={() => {
-                            setContactId(contact.contactId);
+                            form.setValue("contactId", contact.contactId, { shouldDirty: true, shouldValidate: true });
                             setIsContactOpen(false);
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-3 font-body-sm text-body-sm transition-colors cursor-pointer text-left ${
@@ -223,8 +218,7 @@ export default function LoanFormModal({
             </label>
             <select
               id="loan-account"
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
+              {...form.register("accountId")}
               required
               disabled={isPending}
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer disabled:opacity-40"
@@ -252,8 +246,14 @@ export default function LoanFormModal({
                 id="loan-amount"
                 type="text"
                 inputMode="numeric"
+                name="amount"
                 value={amount}
-                onChange={handleAmountChange}
+                onChange={(e) =>
+                  form.setValue("amount", formatRupiah(e.target.value), {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
                 placeholder="0"
                 required
                 disabled={isPending}
@@ -271,8 +271,7 @@ export default function LoanFormModal({
               <input
                 id="loan-date"
                 type="date"
-                value={transactionDate}
-                onChange={(e) => setTransactionDate(e.target.value)}
+                {...form.register("transactionDate")}
                 required
                 disabled={isPending}
                 className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors disabled:opacity-40"
@@ -290,8 +289,7 @@ export default function LoanFormModal({
             <input
               id="loan-due-date"
               type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              {...form.register("dueDate")}
               disabled={isPending}
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors disabled:opacity-40"
             />

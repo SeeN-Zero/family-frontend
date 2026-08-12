@@ -2,10 +2,13 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import { loginWithGoogle, setSession } from "@/lib/auth";
+import { loginSchema, type LoginRequest } from "@/features/auth/schemas";
 
 declare global {
   interface Window {
@@ -97,6 +100,10 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [gsiReady, setGsiReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { reset } = useForm<LoginRequest>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { idToken: "" },
+  });
   const gsiRef = useRef<GsiInstance | null>(null);
   const buttonContainerRef = useRef<HTMLDivElement>(null);
 
@@ -104,14 +111,16 @@ function LoginContent() {
     let cancelled = false;
 
     const handleCredential = async (resp: { credential: string }) => {
-      if (!resp.credential) {
-        setError("TOKEN_GOOGLE_TIDAK_VALID");
+      const parsed = loginSchema.safeParse({ idToken: resp.credential });
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? "TOKEN_GOOGLE_TIDAK_VALID");
         return;
       }
+      reset(parsed.data);
       setIsLoading(true);
       setError(null);
       try {
-        const auth = await loginWithGoogle(resp.credential);
+        const auth = await loginWithGoogle(parsed.data.idToken);
         setSession(auth);
         const redirect = searchParams.get("redirect");
         router.replace(redirect ? redirect : "/dashboard");
@@ -155,7 +164,7 @@ function LoginContent() {
     return () => {
       cancelled = true;
     };
-  }, [router, searchParams]);
+  }, [router, searchParams, reset]);
 
   // Render built-in Google button (proven to work) themed & centered.
   useEffect(() => {

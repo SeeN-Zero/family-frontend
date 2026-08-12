@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Terminal,
@@ -13,6 +12,7 @@ import {
   Tags,
   ContactRound,
 } from "lucide-react";
+import { useSidebarStore } from "@/stores/sidebar-store";
 
 const MENU_ITEMS = [
   { label: "DASHBOARD", icon: Terminal, href: "/dashboard" },
@@ -25,7 +25,7 @@ const MENU_ITEMS = [
 ];
 
 export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isCollapsed, toggle } = useSidebarStore();
 
   return (
     <aside
@@ -40,7 +40,7 @@ export default function Sidebar() {
           </span>
         )}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggle}
           className="text-primary hover:bg-primary hover:text-background transition-colors shrink-0 w-8 h-8 flex items-center justify-center cursor-pointer"
         >
           {isCollapsed ? (

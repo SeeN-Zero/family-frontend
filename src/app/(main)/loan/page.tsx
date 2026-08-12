@@ -10,8 +10,10 @@ import { useCreateLoan, useDeleteLoan } from "@/hooks/useLoanMutations";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useContacts } from "@/hooks/useContacts";
 import { formatShortDate } from "@/lib/date";
-import { formatCurrency } from "@/lib/currency";
 import type { ApiLoan, CreateLoanRequest, LoanType } from "@/hooks/types";
+
+const formatAmount = (amount: number): string =>
+  `Rp ${amount.toLocaleString("id-ID")}`;
 
 export default function LoanPage() {
   const [activeTab, setActiveTab] = useState<LoanType>("DEBT");
@@ -198,10 +200,10 @@ export default function LoanPage() {
                           {loan.description || "—"}
                         </td>
                         <td className="py-4 px-4 text-right whitespace-nowrap">
-                          {formatCurrency(loan.amount)}
+                          {formatAmount(loan.amount)}
                         </td>
                         <td className="py-4 px-4 text-right whitespace-nowrap">
-                          {formatCurrency(loan.remainingAmount)}
+                          {formatAmount(loan.remainingAmount)}
                         </td>
                         <td className="py-4 px-4 hidden md:table-cell whitespace-nowrap">
                           {formatShortDate(loan.transactionDate)}
@@ -281,4 +283,3 @@ export default function LoanPage() {
     </>
   );
 }
-

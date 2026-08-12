@@ -306,7 +306,7 @@ export default function AccountPage() {
 
       {deletingAccount && (
         <ConfirmDialog
-          title="* DELETE_ACCOUNT"
+          title="DELETE_ACCOUNT"
           message={`Hapus akun "${deletingAccount.name}"? Tindakan ini permanen dan menghapus seluruh riwayat transaksi, pinjaman, dan pembayaran pinjaman yang terkait dengan akun ini.`}
           confirmLabel="DELETE"
           cancelLabel="CANCEL"

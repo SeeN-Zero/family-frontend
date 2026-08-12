@@ -66,7 +66,7 @@ export default function LoanPaymentsPanel({ loan, accounts, onClose }: LoanPayme
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h4 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">* LOAN_PAYMENTS</h4>
+            <h4 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">LOAN_PAYMENTS</h4>
             <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">{loan.contactName} / {loan.accountName}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-label-caps text-label-caps uppercase tracking-wider md:w-[60%] md:min-w-[560px] md:ml-auto">

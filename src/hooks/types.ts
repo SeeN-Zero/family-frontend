@@ -1,3 +1,27 @@
+export type {
+  CreateAccountRequest,
+  UpdateAccountRequest,
+} from "@/features/accounts/schemas";
+export type {
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+} from "@/features/categories/schemas";
+export type {
+  CreateContactRequest,
+  UpdateContactRequest,
+} from "@/features/contacts/schemas";
+export type {
+  CreateLoanPaymentRequest,
+  CreateLoanRequest,
+  UpdateLoanPaymentRequest,
+} from "@/features/loans/schemas";
+export type {
+  CreateTransactionRequest,
+  CreateTransferRequest,
+  UpdateTransactionRequest,
+} from "@/features/transactions/schemas";
+
+
 // API entity types matching the backend (Java/Quarkus) REST responses.
 // Field names follow the OpenAPI spec in the `openapi` file at the repo root.
 
@@ -143,77 +167,3 @@ export type LoanFilter = {
 // Create / Update request types
 // ---------------------------------------------------------------------------
 
-export type CreateCategoryRequest = {
-  name: string;
-  type: CategoryType;
-  icon?: string;
-  color?: string;
-};
-
-export type UpdateCategoryRequest = {
-  name: string;
-  icon?: string;
-  color?: string;
-  displayOrder?: number;
-  isArchived?: boolean;
-};
-
-export type CreateAccountRequest = {
-  name: string;
-  currency: CurrencyCode;
-  icon?: string;
-  color?: string;
-};
-
-export type UpdateAccountRequest = {
-  name: string;
-  currency: CurrencyCode;
-  icon?: string;
-  color?: string;
-  displayOrder?: number;
-};
-
-export type CreateTransactionRequest = {
-  accountId: string;
-  categoryId: string;
-  amount: number;
-  description?: string;
-  transactionDate: string;
-};
-
-export type UpdateTransactionRequest = CreateTransactionRequest;
-
-export type CreateContactRequest = {
-  name: string;
-  phone?: string;
-  email?: string;
-  notes?: string;
-};
-
-export type UpdateContactRequest = CreateContactRequest;
-
-export type CreateLoanRequest = {
-  contactId: string;
-  accountId: string;
-  loanType: LoanType;
-  amount: number;
-  description?: string;
-  transactionDate: string;
-  dueDate?: string;
-};
-
-export type CreateLoanPaymentRequest = {
-  accountId: string;
-  amount: number;
-  paymentDate: string;
-  description?: string;
-};
-
-export type UpdateLoanPaymentRequest = CreateLoanPaymentRequest;
-
-export type CreateTransferRequest = {
-  sourceAccountId: string;
-  targetAccountId: string;
-  amount: number;
-  transactionDate: string;
-};

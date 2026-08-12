@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   X,
   Wallet,
@@ -18,6 +19,7 @@ import {
   GraduationCap,
   Gift,
 } from "lucide-react";
+import { updateCategorySchema, type UpdateCategoryInput } from "@/features/categories/schemas";
 import type { ApiCategory, UpdateCategoryRequest } from "@/hooks/types";
 
 type EditCategoryModalProps = {
@@ -65,19 +67,19 @@ export default function EditCategoryModal({
   onClose,
   onSubmit,
 }: EditCategoryModalProps) {
-  const [name, setName] = useState(category.name);
-  const [icon, setIcon] = useState(category.icon ?? "trending-up");
-  const [color, setColor] = useState(hexToColorName(category.color));
+  const form = useForm<UpdateCategoryInput, unknown, UpdateCategoryRequest>({
+    resolver: zodResolver(updateCategorySchema),
+    defaultValues: {
+      name: category.name,
+      icon: category.icon ?? "trending-up",
+      color: category.color ?? "#22C55E",
+    },
+  });
+  const icon = useWatch({ control: form.control, name: "icon" }) ?? "trending-up";
+  const color = hexToColorName(useWatch({ control: form.control, name: "color" }) ?? "#22C55E");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    const selectedColor = COLOR_OPTIONS.find((opt) => opt.name === color);
-    onSubmit({
-      name: name.trim().toUpperCase(),
-      icon,
-      color: selectedColor?.hex ?? category.color ?? "#22C55E",
-    });
+  const handleSubmit = (values: UpdateCategoryRequest) => {
+    onSubmit(values);
     onClose();
   };
 
@@ -99,7 +101,7 @@ export default function EditCategoryModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label
               htmlFor="edit-cat-name"
@@ -110,8 +112,7 @@ export default function EditCategoryModal({
             <input
               id="edit-cat-name"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...form.register("name")}
               placeholder="e.g. TRANSPORTATION"
               required
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
@@ -130,7 +131,7 @@ export default function EditCategoryModal({
                   <button
                     key={opt.name}
                     type="button"
-                    onClick={() => setIcon(opt.name)}
+                    onClick={() => form.setValue("icon", opt.name, { shouldDirty: true, shouldValidate: true })}
                     className={`flex items-center justify-center aspect-square border transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-primary text-background border-primary"
@@ -155,7 +156,7 @@ export default function EditCategoryModal({
                   <button
                     key={opt.name}
                     type="button"
-                    onClick={() => setColor(opt.name)}
+                    onClick={() => form.setValue("color", opt.hex, { shouldDirty: true, shouldValidate: true })}
                     className={`aspect-square border-2 transition-colors cursor-pointer flex items-center justify-center ${opt.className} ${
                       isSelected
                         ? "border-primary"

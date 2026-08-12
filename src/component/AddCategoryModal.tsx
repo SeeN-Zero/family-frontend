@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createCategorySchema, type CreateCategoryInput, type CreateCategoryRequest } from "@/features/categories/schemas";
 import {
   X,
   Wallet,
@@ -52,33 +54,49 @@ const ICON_OPTIONS = [
 ];
 
 const COLOR_OPTIONS = [
-  { name: "green", className: "bg-green-500" },
-  { name: "blue", className: "bg-blue-500" },
-  { name: "yellow", className: "bg-yellow-500" },
-  { name: "red", className: "bg-red-500" },
-  { name: "purple", className: "bg-purple-500" },
-  { name: "orange", className: "bg-orange-500" },
+  { name: "green", className: "bg-green-500", hex: "#22C55E" },
+  { name: "blue", className: "bg-blue-500", hex: "#3B82F6" },
+  { name: "yellow", className: "bg-yellow-500", hex: "#EAB308" },
+  { name: "red", className: "bg-red-500", hex: "#EF4444" },
+  { name: "purple", className: "bg-purple-500", hex: "#A855F7" },
+  { name: "orange", className: "bg-orange-500", hex: "#F97316" },
 ];
+
+function hexToColorName(hex: string | null): string {
+  if (!hex) return "green";
+  const normalized = hex.toUpperCase();
+  return (
+    COLOR_OPTIONS.find((opt) => opt.hex.toUpperCase() === normalized)?.name ??
+    "green"
+  );
+}
 
 export default function AddCategoryModal({
   defaultType,
   onClose,
   onSubmit,
 }: AddCategoryModalProps) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState<CategoryType>(defaultType);
-  const [icon, setIcon] = useState("trending-up");
-  const [color, setColor] = useState("green");
+  const form = useForm<CreateCategoryInput, unknown, CreateCategoryRequest>({
+    resolver: zodResolver(createCategorySchema),
+    defaultValues: {
+      name: "",
+      type: defaultType === "expense" ? "EXPENSE" : "INCOME",
+      icon: "trending-up",
+      color: "#22C55E",
+    },
+  });
+  const type = useWatch({ control: form.control, name: "type" });
+  const icon = useWatch({ control: form.control, name: "icon" }) ?? "trending-up";
+  const colorHex = useWatch({ control: form.control, name: "color" }) ?? "#22C55E";
+  const color = hexToColorName(colorHex);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const handleSubmit = (values: CreateCategoryRequest) => {
     onSubmit({
-      id: `cat${Date.now()}`,
-      name: name.trim().toUpperCase(),
-      type,
-      icon,
-      color,
+      id: values.name,
+      name: values.name,
+      type: values.type === "EXPENSE" ? "expense" : "income",
+      icon: values.icon ?? "trending-up",
+      color: values.color ?? "#22C55E",
     });
     onClose();
   };
@@ -89,7 +107,7 @@ export default function AddCategoryModal({
       <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
-            * NEW_CATEGORY
+            NEW_CATEGORY
           </h3>
           <button
             type="button"
@@ -101,7 +119,7 @@ export default function AddCategoryModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
               TYPE
@@ -109,9 +127,9 @@ export default function AddCategoryModal({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setType("income")}
+                onClick={() => form.setValue("type", "INCOME", { shouldDirty: true, shouldValidate: true })}
                 className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border ${
-                  type === "income"
+                  type === "INCOME"
                     ? "bg-primary text-background border-primary"
                     : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
                 }`}
@@ -120,9 +138,9 @@ export default function AddCategoryModal({
               </button>
               <button
                 type="button"
-                onClick={() => setType("expense")}
+                onClick={() => form.setValue("type", "EXPENSE", { shouldDirty: true, shouldValidate: true })}
                 className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border ${
-                  type === "expense"
+                  type === "EXPENSE"
                     ? "bg-primary text-background border-primary"
                     : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
                 }`}
@@ -142,8 +160,7 @@ export default function AddCategoryModal({
             <input
               id="cat-name"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...form.register("name")}
               placeholder="e.g. TRANSPORTATION"
               required
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
@@ -162,7 +179,7 @@ export default function AddCategoryModal({
                   <button
                     key={opt.name}
                     type="button"
-                    onClick={() => setIcon(opt.name)}
+                    onClick={() => form.setValue("icon", opt.name, { shouldDirty: true, shouldValidate: true })}
                     className={`flex items-center justify-center aspect-square border transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-primary text-background border-primary"
@@ -187,7 +204,7 @@ export default function AddCategoryModal({
                   <button
                     key={opt.name}
                     type="button"
-                    onClick={() => setColor(opt.name)}
+                    onClick={() => form.setValue("color", opt.hex, { shouldDirty: true, shouldValidate: true })}
                     className={`aspect-square border-2 transition-colors cursor-pointer flex items-center justify-center ${opt.className} ${
                       isSelected
                         ? "border-primary"

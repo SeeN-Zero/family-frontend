@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   X,
   Wallet,
@@ -11,6 +12,7 @@ import {
   Coins,
   Check,
 } from "lucide-react";
+import { updateAccountSchema, type UpdateAccountInput } from "@/features/accounts/schemas";
 import type {
   ApiAccount,
   CreateAccountRequest,
@@ -61,42 +63,29 @@ export default function AccountFormModal({
   onSubmit,
 }: AccountFormModalProps) {
   const isEdit = Boolean(account);
-  const [name, setName] = useState(account?.name ?? "");
-  const [currency, setCurrency] = useState<CurrencyCode>(
-    account?.currency ?? "IDR"
-  );
-  const [icon, setIcon] = useState(account?.icon ?? "wallet");
-  const [color, setColor] = useState(hexToColorName(account?.color ?? null));
-  const [displayOrder, setDisplayOrder] = useState(
-    account ? String(account.displayOrder ?? 0) : "0"
-  );
+  const form = useForm<UpdateAccountInput, unknown, UpdateAccountRequest>({
+    resolver: zodResolver(updateAccountSchema),
+    defaultValues: {
+      name: account?.name ?? "",
+      currency: account?.currency ?? "IDR",
+      icon: account?.icon ?? "wallet",
+      color: account?.color ?? "#22C55E",
+      displayOrder: account?.displayOrder ?? 0,
+    },
+  });
+  const icon = useWatch({ control: form.control, name: "icon" }) ?? "wallet";
+  const selectedColorHex = useWatch({ control: form.control, name: "color" }) ?? "#22C55E";
+  const color = hexToColorName(selectedColorHex);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-
-    const selectedColor = COLOR_OPTIONS.find((opt) => opt.name === color);
-    const hexColor = selectedColor?.hex ?? account?.color ?? "#22C55E";
-    const order = Number(displayOrder);
-    const parsedOrder = Number.isFinite(order) ? order : account?.displayOrder;
-
+  const handleSubmit = (values: UpdateAccountRequest) => {
     if (isEdit) {
-      const payload: UpdateAccountRequest = {
-        name: name.trim().toUpperCase(),
-        currency,
-        // Endpoint memakai PUT yang me-replace seluruh field: selalu ikutkan
-        // icon & color supaya tidak hilang saat edit.
-        icon,
-        color: hexColor,
-        displayOrder: parsedOrder,
-      };
-      onSubmit(payload);
+      onSubmit(values);
     } else {
       const payload: CreateAccountRequest = {
-        name: name.trim().toUpperCase(),
-        currency,
-        icon,
-        color: hexColor,
+        name: values.name,
+        currency: values.currency,
+        icon: values.icon,
+        color: values.color,
       };
       onSubmit(payload);
     }
@@ -109,7 +98,7 @@ export default function AccountFormModal({
       <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
-            {isEdit ? "* EDIT_ACCOUNT" : "* NEW_ACCOUNT"}
+            {isEdit ? "EDIT_ACCOUNT" : "NEW_ACCOUNT"}
           </h3>
           <button
             type="button"
@@ -121,7 +110,7 @@ export default function AccountFormModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label
               htmlFor="acc-name"
@@ -132,8 +121,7 @@ export default function AccountFormModal({
             <input
               id="acc-name"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...form.register("name")}
               placeholder="e.g. MAIN_SAVINGS"
               maxLength={50}
               required
@@ -150,8 +138,7 @@ export default function AccountFormModal({
             </label>
             <select
               id="acc-currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+              {...form.register("currency")}
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
             >
               {CURRENCY_OPTIONS.map((opt) => (
@@ -175,8 +162,7 @@ export default function AccountFormModal({
                 type="number"
                 min={0}
                 step={1}
-                value={displayOrder}
-                onChange={(e) => setDisplayOrder(e.target.value)}
+                {...form.register("displayOrder", { valueAsNumber: true })}
                 className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -194,7 +180,7 @@ export default function AccountFormModal({
                   <button
                     key={opt.name}
                     type="button"
-                    onClick={() => setIcon(opt.name)}
+                    onClick={() => form.setValue("icon", opt.name, { shouldDirty: true, shouldValidate: true })}
                     className={`flex items-center justify-center aspect-square border transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-primary text-background border-primary"
@@ -219,7 +205,7 @@ export default function AccountFormModal({
                   <button
                     key={opt.name}
                     type="button"
-                    onClick={() => setColor(opt.name)}
+                    onClick={() => form.setValue("color", opt.hex, { shouldDirty: true, shouldValidate: true })}
                     className={`aspect-square border-2 transition-colors cursor-pointer flex items-center justify-center ${opt.className} ${
                       isSelected
                         ? "border-primary"

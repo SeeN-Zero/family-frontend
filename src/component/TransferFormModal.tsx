@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { X, ArrowRight } from "lucide-react";
 import { todayISO } from "@/lib/date";
-import { formatCurrency, formatRupiah, parseRupiah } from "@/lib/currency";
+import { formatCurrency, formatRupiah } from "@/lib/currency";
+import { createTransferSchema, type CreateTransferInput } from "@/features/transactions/schemas";
 import type { ApiAccount, CreateTransferRequest } from "@/hooks/types";
 
 export type TransferFormPayload = CreateTransferRequest;
@@ -26,33 +28,24 @@ export default function TransferFormModal({
   isPending = false,
   errorMessage,
 }: TransferFormModalProps) {
-  const [fromAccountId, setFromAccountId] = useState(sourceAccountId);
-  const [toAccountId, setToAccountId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(todayISO());
+  const form = useForm<CreateTransferInput, unknown, CreateTransferRequest>({
+    resolver: zodResolver(createTransferSchema),
+    defaultValues: {
+      sourceAccountId,
+      targetAccountId: "",
+      amount: "",
+      transactionDate: todayISO(),
+    },
+  });
 
-
+  const fromAccountId = useWatch({ control: form.control, name: "sourceAccountId" });
+  const amount = String(useWatch({ control: form.control, name: "amount" }) ?? "");
   const activeAccounts = accounts.filter((acc) => !acc.archived);
   const fromAccount = activeAccounts.find((acc) => acc.accountId === fromAccountId);
   const toAccounts = activeAccounts.filter((acc) => acc.accountId !== fromAccountId);
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount(formatRupiah(e.target.value));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const rawAmount = parseRupiah(amount);
-    const parsedAmount = Number(rawAmount);
-    if (!fromAccountId || !toAccountId || !parsedAmount || !date) return;
-    if (fromAccountId === toAccountId) return;
-
-    onSubmit({
-      sourceAccountId: fromAccountId,
-      targetAccountId: toAccountId,
-      amount: parsedAmount,
-      transactionDate: date,
-    });
+  const handleSubmit = (values: CreateTransferRequest) => {
+    onSubmit(values);
   };
 
   return (
@@ -62,7 +55,7 @@ export default function TransferFormModal({
       <div className="relative w-full max-w-lg border border-primary bg-background p-6 md:p-8 bracket-corners">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider">
-            * TRANSFER_BETWEEN_ACCOUNTS
+            TRANSFER_BETWEEN_ACCOUNTS
           </h3>
           <button
             type="button"
@@ -81,7 +74,7 @@ export default function TransferFormModal({
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label
               htmlFor="tf-from"
@@ -91,11 +84,9 @@ export default function TransferFormModal({
             </label>
             <select
               id="tf-from"
-              value={fromAccountId}
-              onChange={(e) => {
-                setFromAccountId(e.target.value);
-                setToAccountId("");
-              }}
+              {...form.register("sourceAccountId", {
+                onChange: () => form.setValue("targetAccountId", ""),
+              })}
               disabled={isPending}
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer disabled:opacity-40"
             >
@@ -128,8 +119,7 @@ export default function TransferFormModal({
             </label>
             <select
               id="tf-to"
-              value={toAccountId}
-              onChange={(e) => setToAccountId(e.target.value)}
+              {...form.register("targetAccountId")}
               required
               disabled={isPending}
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors cursor-pointer disabled:opacity-40"
@@ -157,8 +147,14 @@ export default function TransferFormModal({
                 id="tf-amount"
                 type="text"
                 inputMode="numeric"
+                name="amount"
                 value={amount}
-                onChange={handleAmountChange}
+                onChange={(e) =>
+                  form.setValue("amount", formatRupiah(e.target.value), {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
                 placeholder="0"
                 required
                 disabled={isPending}
@@ -176,8 +172,7 @@ export default function TransferFormModal({
               <input
                 id="tf-date"
                 type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                {...form.register("transactionDate")}
                 required
                 disabled={isPending}
                 className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors disabled:opacity-40"

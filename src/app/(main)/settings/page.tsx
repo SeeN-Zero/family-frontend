@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { User, Users, AppWindow, X, KeyRound, Mail } from "lucide-react";
+import {
+  appSettingsSchema,
+  profileSettingsSchema,
+  type AppSettingsInput,
+  type AppSettingsValues,
+  type ProfileSettingsInput,
+  type ProfileSettingsValues,
+} from "@/features/settings/schemas";
 
 type TabId = "profile" | "family" | "app";
 
@@ -27,10 +37,16 @@ const TABS: { id: TabId; label: string; icon: typeof User }[] = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("profile");
-  const [username, setUsername] = useState("SENNA ANNABA AHMAD");
   const [members, setMembers] = useState(INITIAL_MEMBERS);
-  const [cycleStartDay, setCycleStartDay] = useState(1);
   const [isSaved, setIsSaved] = useState(false);
+  const profileForm = useForm<ProfileSettingsInput, unknown, ProfileSettingsValues>({
+    resolver: zodResolver(profileSettingsSchema),
+    defaultValues: { username: "SENNA ANNABA AHMAD" },
+  });
+  const appForm = useForm<AppSettingsInput, unknown, AppSettingsValues>({
+    resolver: zodResolver(appSettingsSchema),
+    defaultValues: { cycleStartDay: 1 },
+  });
 
   const handleRemoveMember = (id: string) => {
     setMembers((prev) => prev.filter((m) => m.id !== id));
@@ -85,10 +101,7 @@ export default function SettingsPage() {
                 </div>
 
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    showSaved();
-                  }}
+                  onSubmit={profileForm.handleSubmit(() => showSaved())}
                   className="flex flex-col gap-5"
                 >
                   <div className="flex flex-col gap-2">
@@ -101,8 +114,7 @@ export default function SettingsPage() {
                     <input
                       id="profile-username"
                       type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      {...profileForm.register("username")}
                       required
                       className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
                     />
@@ -221,10 +233,7 @@ export default function SettingsPage() {
                 </div>
 
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    showSaved();
-                  }}
+                  onSubmit={appForm.handleSubmit(() => showSaved())}
                   className="flex flex-col gap-5"
                 >
                   <div className="flex flex-col gap-2 max-w-xs">
@@ -239,13 +248,7 @@ export default function SettingsPage() {
                       type="number"
                       min={1}
                       max={25}
-                      value={cycleStartDay}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") return;
-                        const num = Number(raw);
-                        setCycleStartDay(Math.min(25, Math.max(1, num)));
-                      }}
+                      {...appForm.register("cycleStartDay", { valueAsNumber: true })}
                       required
                       className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
                     />
