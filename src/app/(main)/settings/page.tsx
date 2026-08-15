@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User, Users, AppWindow, X, Copy, Check, LogOut, Trash2, UserPlus } from "lucide-react";
+import ConfirmDialog from "@/component/ConfirmDialog";
 import {
   appSettingsSchema,
   profileSettingsSchema,
@@ -26,6 +28,7 @@ import {
   useLeaveFamily,
   useRemoveMember,
 } from "@/hooks/useFamilyMutations";
+import { useUserAccount, useUpdateUserAccount } from "@/hooks/useUserAccount";
 import type { CreateFamilyRequest, JoinFamilyRequest, Title } from "@/hooks/types";
 
 type TabId = "profile" | "family" | "app";
@@ -43,7 +46,25 @@ const TITLE_LABELS: Record<Title, string> = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("profile");
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full flex items-center justify-center py-16">
+          <div className="border-2 border-primary bg-surface p-8 text-primary font-label-caps text-label-caps uppercase tracking-wider">
+            LOADING...
+          </div>
+        </div>
+      }
+    >
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as TabId | null;
+  const [activeTab, setActiveTab] = useState<TabId>(tabParam || "profile");
   const [isSaved, setIsSaved] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showJoinForm, setShowJoinForm] = useState(false);
@@ -52,6 +73,8 @@ export default function SettingsPage() {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [removingMember, setRemovingMember] = useState<string | null>(null);
 
+  const { data: userAccount, isLoading: userLoading } = useUserAccount();
+  const updateUserAccount = useUpdateUserAccount();
   const { data: family, isLoading: familyLoading } = useMyFamily();
   const { data: members = [], isLoading: membersLoading } = useFamilyMembers();
   const createFamily = useCreateFamily();
@@ -62,8 +85,15 @@ export default function SettingsPage() {
 
   const profileForm = useForm<ProfileSettingsInput, unknown, ProfileSettingsValues>({
     resolver: zodResolver(profileSettingsSchema),
-    defaultValues: { username: "SENNA ANNABA AHMAD" },
+    defaultValues: { username: "" },
   });
+
+  // Populate form with user data
+  useEffect(() => {
+    if (userAccount) {
+      profileForm.reset({ username: userAccount.name });
+    }
+  }, [userAccount, profileForm]);
   const appForm = useForm<AppSettingsInput, unknown, AppSettingsValues>({
     resolver: zodResolver(appSettingsSchema),
     defaultValues: { cycleStartDay: 1 },
@@ -80,6 +110,17 @@ export default function SettingsPage() {
   const showSaved = () => {
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const handleProfileSave = (values: ProfileSettingsValues) => {
+    updateUserAccount.mutate(
+      { name: values.username },
+      {
+        onSuccess: () => {
+          showSaved();
+        },
+      }
+    );
   };
 
   const handleCreateFamily = (payload: CreateFamilyRequest) => {
@@ -171,10 +212,22 @@ export default function SettingsPage() {
                   )}
                 </div>
 
-                <form
-                  onSubmit={profileForm.handleSubmit(() => showSaved())}
-                  className="flex flex-col gap-5"
-                >
+                {userLoading ? (
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-2">
+                      <div className="h-4 bg-surface-variant w-24 animate-pulse" />
+                      <div className="h-12 bg-surface-variant animate-pulse" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="h-4 bg-surface-variant w-24 animate-pulse" />
+                      <div className="h-12 bg-surface-variant animate-pulse" />
+                    </div>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={profileForm.handleSubmit(handleProfileSave)}
+                    className="flex flex-col gap-5"
+                  >
                   <div className="flex flex-col gap-2">
                     <label
                       htmlFor="profile-username"
@@ -187,7 +240,8 @@ export default function SettingsPage() {
                       type="text"
                       {...profileForm.register("username")}
                       required
-                      className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+                      disabled={userLoading}
+                      className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -202,7 +256,7 @@ export default function SettingsPage() {
                       <input
                         id="profile-email"
                         type="email"
-                        value="senna.annaba@gmail.com"
+                        value={userAccount?.email || ""}
                         readOnly
                         className="w-full bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-outline focus:outline-none cursor-not-allowed pr-11"
                       />
@@ -213,12 +267,14 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-end gap-3 mt-2">
                     <button
                       type="submit"
-                      className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer"
+                      disabled={updateUserAccount.isPending || userLoading}
+                      className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      SAVE_CHANGES
+                      {updateUserAccount.isPending ? "SAVING..." : "SAVE_CHANGES"}
                     </button>
                   </div>
                 </form>
+                )}
               </div>
             )}
 
@@ -586,116 +642,46 @@ export default function SettingsPage() {
 
       {/* Delete Family Modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80" onClick={() => setConfirmDelete(false)} />
-          <div className="relative w-full max-w-md border border-primary bg-background p-6 md:p-8 bracket-corners">
-            <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider mb-4">
-              DELETE_FAMILY?
-            </h3>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
-              THIS_WILL_REMOVE_ALL_MEMBERS_AND_DELETE_THE_FAMILY_PERMANENTLY
-            </p>
-            {deleteFamily.error && (
-              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
-                * {deleteFamily.error.message}
-              </p>
-            )}
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleteFamily.isPending}
-                className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteFamily}
-                disabled={deleteFamily.isPending}
-                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {deleteFamily.isPending ? "DELETING..." : "DELETE"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="DELETE_FAMILY?"
+          message="THIS_WILL_REMOVE_ALL_MEMBERS_AND_DELETE_THE_FAMILY_PERMANENTLY"
+          confirmLabel="DELETE"
+          cancelLabel="CANCEL"
+          isPending={deleteFamily.isPending}
+          errorMessage={deleteFamily.error?.message}
+          onConfirm={handleDeleteFamily}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
 
       {/* Leave Family Modal */}
       {confirmLeave && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80" onClick={() => setConfirmLeave(false)} />
-          <div className="relative w-full max-w-md border border-primary bg-background p-6 md:p-8 bracket-corners">
-            <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider mb-4">
-              LEAVE_FAMILY?
-            </h3>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
-              YOU_WILL_NO_LONGER_BE_PART_OF_THIS_FAMILY
-            </p>
-            {leaveFamily.error && (
-              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
-                * {leaveFamily.error.message}
-              </p>
-            )}
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmLeave(false)}
-                disabled={leaveFamily.isPending}
-                className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                onClick={handleLeaveFamily}
-                disabled={leaveFamily.isPending}
-                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {leaveFamily.isPending ? "LEAVING..." : "LEAVE"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="LEAVE_FAMILY?"
+          message="YOU_WILL_NO_LONGER_BE_PART_OF_THIS_FAMILY"
+          confirmLabel="LEAVE"
+          cancelLabel="CANCEL"
+          pendingLabel="LEAVING..."
+          isPending={leaveFamily.isPending}
+          errorMessage={leaveFamily.error?.message}
+          onConfirm={handleLeaveFamily}
+          onCancel={() => setConfirmLeave(false)}
+        />
       )}
 
       {/* Remove Member Modal */}
       {removingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80" onClick={() => setRemovingMember(null)} />
-          <div className="relative w-full max-w-md border border-primary bg-background p-6 md:p-8 bracket-corners">
-            <h3 className="font-label-caps text-label-caps text-primary uppercase tracking-wider mb-4">
-              REMOVE_MEMBER?
-            </h3>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
-              THIS_MEMBER_WILL_BE_REMOVED_FROM_THE_FAMILY
-            </p>
-            {removeMember.error && (
-              <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider mb-6">
-                * {removeMember.error.message}
-              </p>
-            )}
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setRemovingMember(null)}
-                disabled={removeMember.isPending}
-                className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRemoveMember(removingMember)}
-                disabled={removeMember.isPending}
-                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {removeMember.isPending ? "REMOVING..." : "REMOVE"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="REMOVE_MEMBER?"
+          message="THIS_MEMBER_WILL_BE_REMOVED_FROM_THE_FAMILY"
+          confirmLabel="REMOVE"
+          cancelLabel="CANCEL"
+          pendingLabel="REMOVING..."
+          isPending={removeMember.isPending}
+          errorMessage={removeMember.error?.message}
+          onConfirm={() => handleRemoveMember(removingMember)}
+          onCancel={() => setRemovingMember(null)}
+        />
       )}
     </div>
   );

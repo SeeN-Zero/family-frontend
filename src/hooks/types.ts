@@ -153,18 +153,35 @@ export type ApiFamilyMember = {
   title: Title;
 };
 
+export type ApiAccountSummary = {
+  totalBalance: number;
+};
+
+export type ApiFamilyBalanceSummary = {
+  totalBalance: number;
+};
+
+export type ApiLoanSummary = {
+  totalDebtRemaining: number;
+  totalReceivableRemaining: number;
+};
+
+export type ApiUserAccount = {
+  userId: string;
+  name: string;
+  email: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpdateUserAccountRequest = {
+  name: string;
+};
+
 // ---------------------------------------------------------------------------
 // Filter types
 // ---------------------------------------------------------------------------
-
-export type CategoryFilter = {
-  type?: CategoryType;
-  includeArchived?: boolean;
-};
-
-export type AccountFilter = {
-  includeArchived?: boolean;
-};
 
 export type TransactionFilter = {
   accountId?: string;

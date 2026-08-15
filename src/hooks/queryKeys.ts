@@ -28,12 +28,14 @@ export const accountKeys = {
   list: (includeArchived?: boolean) =>
     ["accounts", includeArchived ?? true] as const,
   detail: (id: string) => ["accounts", "detail", id] as const,
+  summary: () => ["accounts", "summary"] as const,
 };
 
 export const transactionKeys = {
   all: ["transactions"] as const,
   list: (filter: TransactionFilter) => ["transactions", filter] as const,
   detail: (id: string) => ["transactions", "detail", id] as const,
+  recent: () => ["transactions", "recent"] as const,
 };
 
 export const contactKeys = {
@@ -46,6 +48,7 @@ export const loanKeys = {
   all: ["loans"] as const,
   list: (filter: LoanFilter) => ["loans", filter] as const,
   detail: (id: string) => ["loans", "detail", id] as const,
+  summary: () => ["loans", "summary"] as const,
 };
 
 export const loanPaymentKeys = {
@@ -58,4 +61,10 @@ export const familyKeys = {
   all: ["family"] as const,
   me: () => ["family", "me"] as const,
   members: () => ["family", "members"] as const,
+  balanceSummary: () => ["family", "balance-summary"] as const,
+};
+
+export const userAccountKeys = {
+  all: ["userAccount"] as const,
+  me: () => ["userAccount", "me"] as const,
 };

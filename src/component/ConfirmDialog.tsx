@@ -7,6 +7,7 @@ type ConfirmDialogProps = {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  pendingLabel?: string;
   isPending?: boolean;
   errorMessage?: string;
   onConfirm: () => void;
@@ -18,6 +19,7 @@ export default function ConfirmDialog({
   message,
   confirmLabel = "DELETE",
   cancelLabel = "CANCEL",
+  pendingLabel = "DELETING...",
   isPending = false,
   errorMessage,
   onConfirm,
@@ -64,7 +66,7 @@ export default function ConfirmDialog({
             disabled={isPending}
             className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isPending ? "DELETING..." : confirmLabel}
+            {isPending ? pendingLabel : confirmLabel}
           </button>
         </div>
       </div>

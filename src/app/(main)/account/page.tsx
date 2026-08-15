@@ -291,6 +291,8 @@ export default function AccountPage() {
 
       {isModalOpen && (
         <AccountFormModal
+          isPending={createAccount.isPending}
+          errorMessage={createAccount.error?.message}
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleSubmit}
         />
@@ -299,6 +301,8 @@ export default function AccountPage() {
       {editingAccount && (
         <AccountFormModal
           account={editingAccount}
+          isPending={updateAccount.isPending}
+          errorMessage={updateAccount.error?.message}
           onClose={() => setEditingAccount(null)}
           onSubmit={handleSubmit}
         />

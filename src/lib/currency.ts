@@ -13,7 +13,3 @@ export function formatRupiah(value: string): string {
   if (!clean) return "";
   return Number(clean).toLocaleString("id-ID");
 }
-
-export function parseRupiah(value: string): string {
-  return value.replace(/[^\d]/g, "");
-}

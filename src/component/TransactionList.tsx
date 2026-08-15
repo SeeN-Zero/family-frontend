@@ -4,6 +4,7 @@
 import { Pencil, X } from "lucide-react";
 import { formatShortDate } from "@/lib/date";
 import { formatSignedCurrency } from "@/lib/currency";
+import { isPositiveTransaction } from "@/lib/transaction";
 import type { ApiCategory, ApiTransaction } from "@/hooks/types";
 
 type TransactionsListProps = {
@@ -14,16 +15,6 @@ type TransactionsListProps = {
   onEdit?: (transaction: ApiTransaction) => void;
   onDelete?: (transaction: ApiTransaction) => void;
 };
-
-
-function isPositiveTransaction(
-  transaction: ApiTransaction,
-  category?: ApiCategory
-): boolean {
-  if (category?.type) return category.type === "INCOME";
-
-  return transaction.amount >= 0;
-}
 
 export default function TransactionsList({
   transactions,

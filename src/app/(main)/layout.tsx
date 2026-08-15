@@ -5,11 +5,9 @@ import Footer from "@/component/Footer";
 import Sidebar from "@/component/Sidebar";
 
 // Sesi disimpan di localStorage (lihat src/lib/auth.ts), sehingga server TIDAK
-// bisa memverifikasinya lewat cookie. Redirect server-side yang hanya mengecek
-// cookie (mis. cookie `seen_family_token` sudah kedaluwarsa padahal token di
-// localStorage masih valid) membuat halaman selalu terlempar ke /login saat
-// di-refresh. Gate auth sepenuhnya ditangani AuthGuard di sisi client.
-export const dynamic = "force-dynamic";
+// bisa memverifikasinya lewat cookie. Gate auth sepenuhnya ditangani AuthGuard
+// di sisi client; layout ini tidak melakukan pengecekan server apa pun sehingga
+// tidak perlu memaksa dynamic rendering.
 
 export default function MainLayout({
   children,

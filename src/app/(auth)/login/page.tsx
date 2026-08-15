@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import Header from "@/component/Header";
 import Footer from "@/component/Footer";
-import { loginWithGoogle, setSession } from "@/lib/auth";
+import { loginWithGoogle, setSession, safeInternalRedirect } from "@/lib/auth";
 import { loginSchema, type LoginRequest } from "@/features/auth/schemas";
 
 declare global {
@@ -123,7 +123,7 @@ function LoginContent() {
         const auth = await loginWithGoogle(parsed.data.idToken);
         setSession(auth);
         const redirect = searchParams.get("redirect");
-        router.replace(redirect ? redirect : "/dashboard");
+        router.replace(safeInternalRedirect(redirect));
       } catch (err) {
         setError(
           err instanceof Error
@@ -253,10 +253,7 @@ function LoginContent() {
         </div>
       </main>
 
-      <Footer
-        copyrightText="©2026 SEEN FAMILY"
-        links={[{ label: "SEEN_DEV", href: "#" }]}
-      />
+      <Footer copyrightText="©2026 SEEN FAMILY" />
     </>
   );
 }

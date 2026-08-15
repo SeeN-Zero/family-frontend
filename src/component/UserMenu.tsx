@@ -1,56 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, ChevronDown } from "lucide-react";
 import { clearSession } from "@/lib/auth";
-import { AUTH_USER_KEY } from "@/lib/auth-keys";
-
-type AuthUser = {
-  userId: string;
-  email: string;
-  name: string;
-};
-
-function subscribeAuthUser(onStoreChange: () => void): () => void {
-  window.addEventListener("seen-family-auth", onStoreChange);
-  window.addEventListener("storage", onStoreChange);
-
-  return () => {
-    window.removeEventListener("seen-family-auth", onStoreChange);
-    window.removeEventListener("storage", onStoreChange);
-  };
-}
-
-const getAuthUserSnapshot = (): string | null =>
-  localStorage.getItem(AUTH_USER_KEY);
-
-const getServerAuthUserSnapshot = (): string | null => null;
-
-function parseAuthUserSnapshot(snapshot: string | null): AuthUser | null {
-  if (!snapshot) return null;
-
-  try {
-    return JSON.parse(snapshot) as AuthUser;
-  } catch {
-    return null;
-  }
-}
+import { useUserAccount } from "@/hooks/useUserAccount";
 
 export default function UserMenu() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const userSnapshot = useSyncExternalStore(
-    subscribeAuthUser,
-    getAuthUserSnapshot,
-    getServerAuthUserSnapshot
-  );
-  const user = useMemo(
-    () => parseAuthUserSnapshot(userSnapshot),
-    [userSnapshot]
-  );
+  const { data: user } = useUserAccount();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

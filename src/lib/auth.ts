@@ -24,9 +24,28 @@ export type GoogleAuthResponse = {
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
+/**
+ * Sanitize a post-login redirect target.
+ * Only same-app internal paths are allowed — blocks open redirect / `javascript:` XSS.
+ * Returns a safe fallback when the value is missing or untrusted.
+ */
+export function safeInternalRedirect(
+  value: string | null,
+  fallback = "/dashboard"
+): string {
+  if (!value) return fallback;
+  // Internal absolute path only. Second char must be a normal path char:
+  // rejects "//host" (protocol-relative), "/\..." (backslash), "/#", "/?".
+  // Anything with a scheme ("javascript:", "http:") fails the leading "/".
+  if (!value.startsWith("/")) return fallback;
+  if (!/^\/[^/\\?#]/.test(value)) return fallback;
+  return value;
+}
+
 function setTokenCookie(value: string, maxAgeSeconds: number): void {
   if (typeof document === "undefined") return;
-  document.cookie = `${TOKEN_COOKIE}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${TOKEN_COOKIE}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 function clearTokenCookie(): void {

@@ -2,63 +2,33 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  X,
-  Wallet,
-  Landmark,
-  PiggyBank,
-  CreditCard,
-  Banknote,
-  Coins,
-  Check,
-} from "lucide-react";
+import { X, Check } from "lucide-react";
 import { updateAccountSchema, type UpdateAccountInput } from "@/features/accounts/schemas";
 import type {
   ApiAccount,
   CreateAccountRequest,
-  CurrencyCode,
   UpdateAccountRequest,
 } from "@/hooks/types";
+import {
+  ACCOUNT_ICON_OPTIONS,
+  COLOR_OPTIONS,
+  hexToColorName,
+} from "@/lib/form-options";
 
 type AccountFormModalProps = {
   // Ada `account` = mode edit (UpdateAccountRequest), tanpa `account` = mode create
   // (CreateAccountRequest).
   account?: ApiAccount;
+  isPending?: boolean;
+  errorMessage?: string;
   onClose: () => void;
   onSubmit: (payload: CreateAccountRequest | UpdateAccountRequest) => void;
 };
 
-const ICON_OPTIONS = [
-  { name: "wallet", icon: Wallet },
-  { name: "landmark", icon: Landmark },
-  { name: "piggy-bank", icon: PiggyBank },
-  { name: "credit-card", icon: CreditCard },
-  { name: "banknote", icon: Banknote },
-  { name: "coins", icon: Coins },
-];
-
-const COLOR_OPTIONS = [
-  { name: "green", className: "bg-green-500", hex: "#22C55E" },
-  { name: "blue", className: "bg-blue-500", hex: "#3B82F6" },
-  { name: "yellow", className: "bg-yellow-500", hex: "#EAB308" },
-  { name: "red", className: "bg-red-500", hex: "#EF4444" },
-  { name: "purple", className: "bg-purple-500", hex: "#A855F7" },
-  { name: "orange", className: "bg-orange-500", hex: "#F97316" },
-];
-
-const CURRENCY_OPTIONS: CurrencyCode[] = ["IDR"];
-
-function hexToColorName(hex: string | null): string {
-  if (!hex) return "green";
-  const normalized = hex.toUpperCase();
-  return (
-    COLOR_OPTIONS.find((opt) => opt.hex.toUpperCase() === normalized)?.name ??
-    "green"
-  );
-}
-
 export default function AccountFormModal({
   account,
+  isPending = false,
+  errorMessage,
   onClose,
   onSubmit,
 }: AccountFormModalProps) {
@@ -103,7 +73,8 @@ export default function AccountFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-outline-variant hover:text-primary transition-colors cursor-pointer"
+            disabled={isPending}
+            className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40"
             aria-label="Close form"
           >
             <X className="w-5 h-5" />
@@ -111,6 +82,12 @@ export default function AccountFormModal({
         </div>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
+          {errorMessage && (
+            <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider">
+              * {errorMessage}
+            </p>
+          )}
+
           <div className="flex flex-col gap-2">
             <label
               htmlFor="acc-name"
@@ -141,11 +118,7 @@ export default function AccountFormModal({
               {...form.register("currency")}
               className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary focus:outline-none focus:border-primary transition-colors cursor-pointer"
             >
-              {CURRENCY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
+              <option value="IDR">IDR</option>
             </select>
           </div>
 
@@ -173,7 +146,7 @@ export default function AccountFormModal({
               ICON
             </label>
             <div className="grid grid-cols-6 gap-2">
-              {ICON_OPTIONS.map((opt) => {
+              {ACCOUNT_ICON_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = icon === opt.name;
                 return (
@@ -223,15 +196,21 @@ export default function AccountFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer"
+              disabled={isPending}
+              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
-              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer"
+              disabled={isPending}
+              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {isEdit ? "UPDATE_ACCOUNT" : "CREATE_ACCOUNT"}
+              {isPending
+                ? "SAVING..."
+                : isEdit
+                  ? "UPDATE_ACCOUNT"
+                  : "CREATE_ACCOUNT"}
             </button>
           </div>
         </form>
@@ -239,4 +218,3 @@ export default function AccountFormModal({
     </div>
   );
 }
-

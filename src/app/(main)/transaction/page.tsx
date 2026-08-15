@@ -24,6 +24,7 @@ import {
 } from "@/hooks/useTransactionMutations";
 import { useCreateTransfer } from "@/hooks/useTransferMutations";
 import { useCreateAccount } from "@/hooks/useAccountMutations";
+import { recentMonthLabels, monthRange } from "@/lib/date";
 import type {
   ApiTransaction,
   CreateAccountRequest,
@@ -33,27 +34,18 @@ import type {
   UpdateTransactionRequest,
 } from "@/hooks/types";
 
-const MONTHS = [
-  "AUG 24",
-  "SEP 24",
-  "OCT 24",
-  "NOV 24",
-  "DEC 24",
-  "JAN 25",
-  "FEB 25",
-  "MAR 25",
-  "APR 25",
-  "MAY 25",
-  "JUN 25",
-];
+const MONTHS = recentMonthLabels(12);
 
 function TransactionsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlAccountId = searchParams.get("accountId") ?? "";
+  // URL adalah satu-satunya sumber kebenaran untuk filter akun; tombol
+  // browser back/forward langsung tersinkron via searchParams.
+  const urlAccountId = searchParams.get("accountId") ?? "ALL";
+  const activeAccountId =
+    urlAccountId === "ALL" ? "" : urlAccountId;
 
-  const [selectedAccountId, setSelectedAccountId] = useState(urlAccountId);
-  const [selectedMonth, setSelectedMonth] = useState("OCT 24");
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<ApiTransaction | null>(null);
@@ -71,15 +63,20 @@ function TransactionsPageContent() {
   const { data: categories = [] } = useCategories(undefined, undefined, true);
   const manualCategories = categories.filter((category) => !category.isSystem);
 
-  // GET transaction: sementara hanya accountId yang dikirim; categoryId dan
-  // rentang tanggal dikosongkan.
+  const activeMonth = monthRange(selectedMonth);
+
+  // GET transaction: accountId + rentang bulan dari TimelineFilter.
   const {
     data: pageData,
     isLoading: isLoadingTransactions,
     error: transactionError,
   } = useTransactions(
-    { accountId: selectedAccountId },
-    Boolean(selectedAccountId)
+    {
+      accountId: activeAccountId || undefined,
+      dateFrom: activeMonth?.from,
+      dateTo: activeMonth?.to,
+    },
+    true
   );
 
   const transactions: ApiTransaction[] = pageData?.items ?? [];
@@ -89,6 +86,14 @@ function TransactionsPageContent() {
   const deleteTransaction = useDeleteTransaction();
   const createTransfer = useCreateTransfer();
   const createAccount = useCreateAccount();
+
+  // Compute button disabled states - these need to be stable during hydration
+  const activeAccounts = accounts.filter((a) => !a.archived);
+  const isTransferDisabled =
+    urlAccountId === "ALL" ||
+    !urlAccountId ||
+    activeAccounts.length < 2;
+  const isNewTransactionDisabled = urlAccountId === "ALL" || !urlAccountId;
 
   const handleAddTransaction = (payload: TransactionFormPayload) => {
     createTransaction.mutate(payload as CreateTransactionRequest, {
@@ -129,10 +134,14 @@ function TransactionsPageContent() {
   };
 
   const handleSelectAccount = (accountId: string) => {
-    setSelectedAccountId(accountId);
-    router.replace(`/transaction?accountId=${encodeURIComponent(accountId)}`, {
-      scroll: false,
-    });
+    // Sinkronkan ke URL saja — query bereaksi otomatis lewat useSearchParams.
+    if (accountId === "ALL") {
+      router.replace("/transaction", { scroll: false });
+    } else {
+      router.replace(`/transaction?accountId=${encodeURIComponent(accountId)}`, {
+        scroll: false,
+      });
+    }
   };
 
 
@@ -148,10 +157,7 @@ function TransactionsPageContent() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsTransferModalOpen(true)}
-                  disabled={
-                    !selectedAccountId ||
-                    accounts.filter((a) => !a.archived).length < 2
-                  }
+                  disabled={isTransferDisabled}
                   title="TRANSFER"
                   className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -160,7 +166,7 @@ function TransactionsPageContent() {
                 </button>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  disabled={!selectedAccountId}
+                  disabled={isNewTransactionDisabled}
                   title="NEW_TRANSACTION"
                   className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -173,7 +179,7 @@ function TransactionsPageContent() {
               <div className="flex-1 min-w-0">
                 <AccountSelector
                   accounts={accounts}
-                  selectedId={selectedAccountId}
+                  selectedId={urlAccountId}
                   onSelect={handleSelectAccount}
                   disabled={isLoadingAccounts}
                 />
@@ -214,9 +220,9 @@ function TransactionsPageContent() {
 
       {isModalOpen && (
         <TransactionFormModal
-          key={`create-${selectedAccountId}-${manualCategories.map((category) => category.categoryId).join("-")}`}
+          key={`create-${urlAccountId}-${manualCategories.map((category) => category.categoryId).join("-")}`}
           open={isModalOpen}
-          accountId={selectedAccountId}
+          accountId={urlAccountId}
           categories={manualCategories}
           isPending={createTransaction.isPending}
           errorMessage={createTransaction.error?.message}
@@ -229,7 +235,9 @@ function TransactionsPageContent() {
         <TransactionFormModal
           key={`edit-${editingTransaction.transactionId}-${manualCategories.map((category) => category.categoryId).join("-")}`}
           open={Boolean(editingTransaction)}
-          accountId={selectedAccountId}
+          // Pakai account asli milik transaksi yang diedit, bukan akun yang
+          // sedang dipilih — edit TIDAK boleh memindahkan transaksi ke akun lain.
+          accountId={editingTransaction.accountId}
           categories={manualCategories}
           transaction={editingTransaction}
           isPending={updateTransaction.isPending}
@@ -259,9 +267,9 @@ function TransactionsPageContent() {
 
       {isTransferModalOpen && (
         <TransferFormModal
-          key={selectedAccountId}
+          key={urlAccountId}
           accounts={accounts}
-          sourceAccountId={selectedAccountId}
+          sourceAccountId={urlAccountId}
           isPending={createTransfer.isPending}
           errorMessage={createTransfer.error?.message}
           onClose={() => setIsTransferModalOpen(false)}

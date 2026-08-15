@@ -2,24 +2,13 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { X, Check } from "lucide-react";
 import { createCategorySchema, type CreateCategoryInput, type CreateCategoryRequest } from "@/features/categories/schemas";
 import {
-  X,
-  Wallet,
-  Landmark,
-  PiggyBank,
-  CreditCard,
-  Banknote,
-  Coins,
-  Check,
-  TrendingUp,
-  ShoppingCart,
-  Home,
-  Car,
-  Heart,
-  GraduationCap,
-  Gift,
-} from "lucide-react";
+  CATEGORY_ICON_OPTIONS,
+  COLOR_OPTIONS,
+  hexToColorName,
+} from "@/lib/form-options";
 
 export type CategoryType = "income" | "expense";
 
@@ -33,46 +22,16 @@ export type NewCategory = {
 
 type AddCategoryModalProps = {
   defaultType: CategoryType;
+  isPending?: boolean;
+  errorMessage?: string;
   onClose: () => void;
   onSubmit: (category: NewCategory) => void;
 };
 
-const ICON_OPTIONS = [
-  { name: "trending-up", icon: TrendingUp },
-  { name: "shopping-cart", icon: ShoppingCart },
-  { name: "home", icon: Home },
-  { name: "car", icon: Car },
-  { name: "heart", icon: Heart },
-  { name: "graduation-cap", icon: GraduationCap },
-  { name: "gift", icon: Gift },
-  { name: "wallet", icon: Wallet },
-  { name: "landmark", icon: Landmark },
-  { name: "piggy-bank", icon: PiggyBank },
-  { name: "credit-card", icon: CreditCard },
-  { name: "banknote", icon: Banknote },
-  { name: "coins", icon: Coins },
-];
-
-const COLOR_OPTIONS = [
-  { name: "green", className: "bg-green-500", hex: "#22C55E" },
-  { name: "blue", className: "bg-blue-500", hex: "#3B82F6" },
-  { name: "yellow", className: "bg-yellow-500", hex: "#EAB308" },
-  { name: "red", className: "bg-red-500", hex: "#EF4444" },
-  { name: "purple", className: "bg-purple-500", hex: "#A855F7" },
-  { name: "orange", className: "bg-orange-500", hex: "#F97316" },
-];
-
-function hexToColorName(hex: string | null): string {
-  if (!hex) return "green";
-  const normalized = hex.toUpperCase();
-  return (
-    COLOR_OPTIONS.find((opt) => opt.hex.toUpperCase() === normalized)?.name ??
-    "green"
-  );
-}
-
 export default function AddCategoryModal({
   defaultType,
+  isPending = false,
+  errorMessage,
   onClose,
   onSubmit,
 }: AddCategoryModalProps) {
@@ -112,7 +71,8 @@ export default function AddCategoryModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-outline-variant hover:text-primary transition-colors cursor-pointer"
+            disabled={isPending}
+            className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40"
             aria-label="Close form"
           >
             <X className="w-5 h-5" />
@@ -120,6 +80,12 @@ export default function AddCategoryModal({
         </div>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-5">
+          {errorMessage && (
+            <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider">
+              * {errorMessage}
+            </p>
+          )}
+
           <div className="flex flex-col gap-2">
             <label className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
               TYPE
@@ -172,7 +138,7 @@ export default function AddCategoryModal({
               ICON
             </label>
             <div className="grid grid-cols-7 gap-2">
-              {ICON_OPTIONS.map((opt) => {
+              {CATEGORY_ICON_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = icon === opt.name;
                 return (
@@ -222,15 +188,17 @@ export default function AddCategoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer"
+              disabled={isPending}
+              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
-              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer"
+              disabled={isPending}
+              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              CREATE_CATEGORY
+              {isPending ? "SAVING..." : "CREATE_CATEGORY"}
             </button>
           </div>
         </form>

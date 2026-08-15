@@ -116,10 +116,12 @@ export default function CategoryPage() {
       categoryId: cat.categoryId,
       payload: {
         name: cat.name,
-        // Endpoint memakai PUT yang me-replace seluruh field: ikutkan icon &
-        // color saat ini supaya arsip/unarsip TIDAK menghapus icon/warna asli.
+        // Endpoint memakai PUT yang me-replace seluruh field: ikutkan icon,
+        // color, dan displayOrder saat ini supaya arsip/unarsip TIDAK
+        // menghapus icon/warna/urutan asli.
         icon: cat.icon ?? undefined,
         color: cat.color ?? undefined,
+        displayOrder: cat.displayOrder,
         isArchived: !cat.isArchived,
       },
     });
@@ -379,6 +381,8 @@ export default function CategoryPage() {
       {isModalOpen && (
         <AddCategoryModal
           defaultType={activeTab}
+          isPending={createCategory.isPending}
+          errorMessage={createCategory.error?.message}
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleAddCategory}
         />
@@ -387,6 +391,8 @@ export default function CategoryPage() {
       {editingCategory && (
         <EditCategoryModal
           category={editingCategory}
+          isPending={updateCategory.isPending}
+          errorMessage={updateCategory.error?.message}
           onClose={() => setEditingCategory(null)}
           onSubmit={handleUpdateCategory}
         />

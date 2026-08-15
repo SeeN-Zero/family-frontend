@@ -1,16 +1,17 @@
 // src/component/SummaryCard.tsx
+import { formatCurrency } from "@/lib/currency";
 
 type SummaryCardProps = {
   label: string;
-  amount: string;
-  trend?: string;
-  trendDirection?: "up" | "down";
+  amount: number | null;
+  isLoading?: boolean;
   variant?: "default" | "highlight";
 };
 
 export default function SummaryCard({
   label,
   amount,
+  isLoading = false,
   variant = "default",
 }: SummaryCardProps) {
   const isHighlight = variant === "highlight";
@@ -29,13 +30,16 @@ export default function SummaryCard({
         {label}
       </div>
 
-      <div className="font-display-lg text-display-lg">{amount}</div>
-
-      <div
-        className={`mt-2 font-body-sm text-body-sm flex items-center gap-2 ${
-          isHighlight ? "" : "text-on-surface-variant"
-        }`}
-      ></div>
+      <div className="font-display-lg text-display-lg">
+        {isLoading ? (
+          <span className="animate-pulse">█████████</span>
+        ) : amount !== null ? (
+          formatCurrency(amount)
+        ) : (
+          "—"
+        )}
+      </div>
     </div>
   );
 }
+

@@ -24,7 +24,15 @@ export const createLoanSchema = z.object({
   ),
   description: optionalTrimmedString(255, "DESCRIPTION_TERLALU_PANJANG"),
   transactionDate: requiredString("TRANSACTION_DATE"),
-  dueDate: optionalTrimmedString(10, "DUE_DATE_TIDAK_VALID"),
+  dueDate: z
+    .preprocess(
+      (value) =>
+        typeof value === "string" && value.trim() === "" ? undefined : value,
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "DUE_DATE_TIDAK_VALID")
+        .optional()
+    ),
 });
 
 export const createLoanPaymentSchema = z.object({

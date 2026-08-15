@@ -1,81 +1,110 @@
-type Transaction = {
-  date: string;
-  description: string;
-  category: string;
-  amount: string;
-  isPositive: boolean;
+"use client";
+
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import type { ApiTransaction, ApiCategory } from "@/hooks/types";
+import { formatShortDate } from "@/lib/date";
+import { formatSignedCurrency } from "@/lib/currency";
+import { isPositiveTransaction } from "@/lib/transaction";
+
+type TransactionTableProps = {
+  transactions: ApiTransaction[];
+  categories: ApiCategory[];
 };
 
-const TRANSACTIONS: Transaction[] = [
-  {
-    date: "12 OCT",
-    description: "SYS_GROCERY_RUN",
-    category: "[FOOD]",
-    amount: "-Rp 128.500",
-    isPositive: false,
-  },
-  {
-    date: "10 OCT",
-    description: "NET_SUBSCRIPTION",
-    category: "[COMMS]",
-    amount: "-Rp 64.000",
-    isPositive: false,
-  },
-  {
-    date: "05 OCT",
-    description: "WAGE_DEPOSIT_INIT",
-    category: "[INCOME]",
-    amount: "+Rp 4.096.000",
-    isPositive: true,
-  },
-  {
-    date: "01 OCT",
-    description: "POWER_GRID_FEE",
-    category: "[UTIL]",
-    amount: "-Rp 256.000",
-    isPositive: false,
-  },
-];
+export default function TransactionTable({
+  transactions,
+  categories,
+}: TransactionTableProps) {
+  // Always show 5 rows
+  const rows = Array.from({ length: 5 }, (_, i) => transactions[i] || null);
 
-export default function TransactionTable() {
+  const getCategory = (transaction: ApiTransaction) =>
+    categories.find((cat) => cat.categoryId === transaction.categoryId);
+
   return (
     <section className="border border-primary p-6 h-full bg-background">
       <div className="font-label-caps text-label-caps text-primary mb-6 flex items-center justify-between">
         <span>RECENT TRANSACTIONS</span>
-        <span className="animate-pulse">█</span>
+        <Link
+          href="/transaction"
+          className="text-on-surface-variant hover:text-primary transition-colors"
+          title="View All Transactions"
+        >
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left font-body-sm text-body-sm border-collapse">
           <thead>
-            <tr className="text-on-surface-variant border-b border-outline-variant border-dashed">
-              <th className="py-2 px-4 font-normal">DATE</th>
-              <th className="py-2 px-4 font-normal">DESCRIPTION</th>
-              <th className="py-2 px-4 font-normal">CATEGORY</th>
-              <th className="py-2 px-4 font-normal text-right">AMOUNT</th>
+            <tr className="border-b border-dotted border-outline-variant">
+              <th className="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                DATE
+              </th>
+              <th className="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                DESCRIPTION
+              </th>
+              <th className="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                CATEGORY
+              </th>
+              <th className="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
+                AMOUNT
+              </th>
             </tr>
           </thead>
           <tbody>
-            {TRANSACTIONS.slice(0, 5).map((tx) => (
-              <tr
-                key={tx.description + tx.date}
-                className="hover:bg-surface-variant transition-colors border-b border-outline-variant/30"
-              >
-                <td className="py-3 px-4 uppercase">{tx.date}</td>
-                <td className="py-3 px-4">{tx.description}</td>
-                <td className="py-3 px-4">{tx.category}</td>
-                <td
-                  className={`py-3 px-4 text-right ${
-                    tx.isPositive ? "text-income" : "text-expense"
-                  }`}
+            {rows.map((tx, index) => {
+              if (!tx) {
+                return (
+                  <tr
+                    key={`empty-${index}`}
+                    className="border-b border-dotted border-outline-variant last:border-b-0"
+                  >
+                    <td className="py-3 px-4 text-on-surface-variant/30">—</td>
+                    <td className="py-3 px-4 text-on-surface-variant/30">—</td>
+                    <td className="py-3 px-4 text-on-surface-variant/30">—</td>
+                    <td className="py-3 px-4 text-right text-on-surface-variant/30">
+                      —
+                    </td>
+                  </tr>
+                );
+              }
+
+              const category = getCategory(tx);
+              const isPositive = isPositiveTransaction(tx, category);
+              const description = tx.description?.trim() || tx.categoryName;
+
+              return (
+                <tr
+                  key={tx.transactionId}
+                  className="hover:bg-surface-variant transition-colors border-b border-dotted border-outline-variant last:border-b-0"
                 >
-                  {tx.amount}
-                </td>
-              </tr>
-            ))}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {formatShortDate(tx.transactionDate)}
+                  </td>
+                  <td className="py-3 px-4 truncate max-w-[180px]">
+                    {description || "NO_DESCRIPTION"}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="border border-outline-variant px-2 py-1 text-[10px] font-label-caps uppercase tracking-wider text-on-surface-variant">
+                      {tx.categoryName}
+                    </span>
+                  </td>
+                  <td
+                    className={`py-3 px-4 text-right whitespace-nowrap ${
+                      isPositive ? "text-income" : "text-expense"
+                    }`}
+                  >
+                    {formatSignedCurrency(tx.amount, isPositive)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
     </section>
   );
 }
+
