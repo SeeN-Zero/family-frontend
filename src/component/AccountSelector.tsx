@@ -1,7 +1,7 @@
 // src/component/AccountSelector.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import type { ApiAccount } from "@/hooks/types";
@@ -21,20 +21,42 @@ export default function AccountSelector({
   disabled = false,
 }: AccountSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const mountedOnceRef = useRef(false);
+
+  // Server HTML (static prerender) punya `accounts` terisi, sedangkan client
+  // saat hydration masih kosong (query belum resolve). Supaya teks & atribut
+  // cocok saat hydration, render placeholder statis sampai mounted; isi asli
+  // baru muncul setelah mount (state update normal, bukan mismatch).
+  useEffect(() => {
+    if (!mountedOnceRef.current) {
+      mountedOnceRef.current = true;
+      setIsMounted(true);
+    }
+  }, []);
 
   const selectedAccount = accounts.find((acc) => acc.accountId === selectedId);
-  
-  // Calculate total balance for "ALL" option
-  const totalBalance = accounts
-    .filter((acc) => !acc.archived)
-    .reduce((sum, acc) => sum + acc.balance, 0);
-  
+
   const isAllSelected = selectedId === "ALL";
-  const displayName = isAllSelected ? "TOTAL ACCOUNT" : (selectedAccount?.name ?? "NO_ACCOUNT");
-  const displayBalance = isAllSelected ? totalBalance : (selectedAccount?.balance ?? 0);
-  
-  // Compute disabled state - needs to be stable during hydration
-  const isDisabled = disabled || accounts.length === 0;
+  const displayName = isMounted
+    ? isAllSelected
+      ? "TOTAL ACCOUNT"
+      : selectedAccount?.name ?? "NO_ACCOUNT"
+    : isAllSelected
+      ? "TOTAL ACCOUNT"
+      : "";
+  const displayBalance = isMounted
+    ? isAllSelected
+      ? accounts
+          .filter((acc) => !acc.archived)
+          .reduce((sum, acc) => sum + acc.balance, 0)
+      : selectedAccount?.balance ?? 0
+    : 0;
+
+  // `disabled` hanya dari prop (sudah digate `mounted` oleh parent), TIDAK
+  // dari `accounts.length` — jumlah akun berbeda antara SSR vs client
+  // hydration, sehingga atribut `disabled` jadi mismatch.
+  const isDisabled = disabled;
 
   return (
     <div className="relative w-full">
@@ -59,7 +81,7 @@ export default function AccountSelector({
         </div>
       </button>
 
-      {isOpen && !isDisabled && (
+      {isOpen && isMounted && !isDisabled && (
         <>
           <div
             className="fixed inset-0 z-30"
@@ -81,14 +103,18 @@ export default function AccountSelector({
                   TOTAL ACCOUNT
                 </div>
                 <div className="font-display-lg text-body-lg text-primary mt-1">
-                  {formatCurrency(totalBalance)}
+                  {formatCurrency(
+                    accounts
+                      .filter((acc) => !acc.archived)
+                      .reduce((sum, acc) => sum + acc.balance, 0)
+                  )}
                 </div>
               </div>
               {isAllSelected && (
                 <Check className="w-4 h-4 text-primary shrink-0" />
               )}
             </button>
-            
+
             {/* Individual accounts */}
             {accounts.map((acc) => (
               <button

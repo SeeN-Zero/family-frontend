@@ -98,17 +98,17 @@ export default function AccountPage() {
     <>
       <div className="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
         <div className="bg-background border border-primary p-6 md:p-8 flex flex-col gap-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-[16px] md:text-[18px]">
               ACCOUNT_MANAGEMENT
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center">
               <button
                 type="button"
                 role="switch"
                 aria-checked={includeArchived}
                 onClick={() => setIncludeArchived((prev) => !prev)}
-                className="flex items-center gap-2 border border-outline-variant px-3 py-2 font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 border border-outline-variant px-3 py-[14px] font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer flex-1 sm:flex-none"
               >
                 <span
                   aria-hidden="true"
@@ -130,7 +130,7 @@ export default function AccountPage() {
               </button>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center gap-2 cursor-pointer"
+                className="border border-primary px-4 py-[14px] font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-none"
               >
                 <Plus className="w-4 h-4" />
                 NEW_ACCOUNT
@@ -147,25 +147,25 @@ export default function AccountPage() {
 
 
           <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[400px] md:min-w-[760px] text-left border-collapse">
               <thead className="sticky top-0 bg-background z-10">
                 <tr className="border-b border-dotted border-outline-variant">
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant">
                     NAME
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant">
                     CURRENCY
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant">
                     BALANCE
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
                     STATUS
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
                     ORDER
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant text-center w-16 md:w-24">
                     ACTIONS
                   </th>
                 </tr>
@@ -192,7 +192,7 @@ export default function AccountPage() {
                         className="hover:bg-surface-variant transition-colors border-b border-dotted border-outline-variant last:border-b-0 cursor-pointer"
                         title="VIEW_TRANSACTIONS"
                       >
-                        <td className="py-4 px-4 whitespace-nowrap">
+                        <td className="py-4 px-2 md:px-4 whitespace-nowrap">
                           <div className="flex items-center gap-3 min-w-0">
                             <span
                               className="w-8 h-8 flex items-center justify-center shrink-0"
@@ -200,25 +200,28 @@ export default function AccountPage() {
                             >
                               <Icon className="w-4 h-4 text-background" />
                             </span>
-                            <span className="truncate" title={acc.name}>
+                            <span
+                              className="truncate max-w-[90px] md:max-w-none"
+                              title={acc.name}
+                            >
                               {acc.name}
                             </span>
                           </div>
                         </td>
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <span className="border border-outline-variant px-2 py-1 text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider">
+                        <td className="py-4 px-2 md:px-4 whitespace-nowrap">
+                          <span className="border border-outline-variant px-2 md:px-4 py-1 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
                             {acc.currency}
                           </span>
                         </td>
                         <td
-                          className="py-4 px-4 whitespace-nowrap truncate"
+                          className="py-4 px-2 md:px-4 whitespace-nowrap truncate"
                           title={formatCurrency(acc.balance)}
                         >
                           {formatCurrency(acc.balance)}
                         </td>
-                        <td className="py-4 px-4 whitespace-nowrap">
+                        <td className="py-4 px-2 md:px-4 whitespace-nowrap hidden md:table-cell">
                           <span
-                            className={`border px-2 py-1 text-[10px] font-label-caps uppercase tracking-wider ${
+                            className={`border px-2 md:px-4 py-1 font-label-caps text-label-caps uppercase tracking-wider ${
                               acc.archived
                                 ? "border-outline-variant text-on-surface-variant"
                                 : "border-primary text-primary"
@@ -227,11 +230,11 @@ export default function AccountPage() {
                             {acc.archived ? "ARCHIVED" : "ACTIVE"}
                           </span>
                         </td>
-                        <td className="py-4 px-4 whitespace-nowrap hidden md:table-cell">
+                        <td className="py-4 px-2 md:px-4 whitespace-nowrap hidden md:table-cell">
                           {acc.displayOrder}
                         </td>
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="py-4 px-2 md:px-4 whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1 md:gap-2">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -239,7 +242,7 @@ export default function AccountPage() {
                                 handleViewTransactions(acc.accountId);
                               }}
                               title="VIEW_TRANSACTIONS"
-                              className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                              className="border border-outline-variant px-2 py-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
                             >
                               <Eye className="w-3 h-3" />
                             </button>
@@ -251,7 +254,7 @@ export default function AccountPage() {
                               }}
                               disabled={updateAccount.isPending}
                               title="EDIT_ACCOUNT"
-                              className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="border border-outline-variant px-2 py-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Pencil className="w-3 h-3" />
                             </button>
@@ -263,7 +266,7 @@ export default function AccountPage() {
                               }}
                               disabled={deleteAccount.isPending}
                               title="DELETE_ACCOUNT"
-                              className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="border border-outline-variant px-2 py-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>

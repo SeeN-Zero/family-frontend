@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, ArrowLeftRight } from "lucide-react";
 import AccountSelector from "@/component/AccountSelector";
@@ -24,7 +24,8 @@ import {
 } from "@/hooks/useTransactionMutations";
 import { useCreateTransfer } from "@/hooks/useTransferMutations";
 import { useCreateAccount } from "@/hooks/useAccountMutations";
-import { recentMonthLabels, monthRange } from "@/lib/date";
+import { useCycle } from "@/hooks/useCycle";
+import { currentMonthLabel, cycleRange } from "@/lib/date";
 import type {
   ApiTransaction,
   CreateAccountRequest,
@@ -33,8 +34,6 @@ import type {
   UpdateAccountRequest,
   UpdateTransactionRequest,
 } from "@/hooks/types";
-
-const MONTHS = recentMonthLabels(12);
 
 function TransactionsPageContent() {
   const router = useRouter();
@@ -45,7 +44,22 @@ function TransactionsPageContent() {
   const activeAccountId =
     urlAccountId === "ALL" ? "" : urlAccountId;
 
-  const [selectedMonth, setSelectedMonth] = useState(MONTHS[0]);
+  // selectedMonth diinisialisasi deterministik ("AUG 26") supaya SSR & first
+  // client render cocok. Setelah mount, `currentMonthLabel()` baru diterapkan
+  // lewat effect satu kali sehingga tidak ada perbedaan waktu server vs client
+  // yang bikin HTML tidak cocok. mountedRef + isMounted flag mencegah loop
+  // re-render saat React Strict Mode double-invoke.
+  const [selectedMonth, setSelectedMonth] = useState("AUG 26");
+  const [isMounted, setIsMounted] = useState(false);
+  const mountedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!mountedOnceRef.current) {
+      mountedOnceRef.current = true;
+      setIsMounted(true);
+      setSelectedMonth(currentMonthLabel());
+    }
+  }, []);
+  const mounted = isMounted;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<ApiTransaction | null>(null);
@@ -63,9 +77,16 @@ function TransactionsPageContent() {
   const { data: categories = [] } = useCategories(undefined, undefined, true);
   const manualCategories = categories.filter((category) => !category.isSystem);
 
-  const activeMonth = monthRange(selectedMonth);
+  // Cycle setting dari server: hari mulai cycle bulanan pembukuan. Filter
+  // transaksi memakai rentang cycle, bukan bulan kalender penuh.
+  const { data: cycle } = useCycle();
+  const cycleStartDay = cycle?.cycleStartDay ?? 1;
 
-  // GET transaction: accountId + rentang bulan dari TimelineFilter.
+  // Label bulan terpilih = bulan yang mengandung cycleEnd.
+  const activeCycle =
+    cycleStartDay > 0 ? cycleRange(selectedMonth, cycleStartDay) : null;
+
+  // GET transaction: accountId + rentang cycle dari TimelineFilter.
   const {
     data: pageData,
     isLoading: isLoadingTransactions,
@@ -73,8 +94,8 @@ function TransactionsPageContent() {
   } = useTransactions(
     {
       accountId: activeAccountId || undefined,
-      dateFrom: activeMonth?.from,
-      dateTo: activeMonth?.to,
+      dateFrom: activeCycle?.from,
+      dateTo: activeCycle?.to,
     },
     true
   );
@@ -90,10 +111,12 @@ function TransactionsPageContent() {
   // Compute button disabled states - these need to be stable during hydration
   const activeAccounts = accounts.filter((a) => !a.archived);
   const isTransferDisabled =
-    urlAccountId === "ALL" ||
-    !urlAccountId ||
-    activeAccounts.length < 2;
-  const isNewTransactionDisabled = urlAccountId === "ALL" || !urlAccountId;
+    (urlAccountId === "ALL" ||
+      !urlAccountId ||
+      activeAccounts.length < 2) &&
+    mounted;
+  const isNewTransactionDisabled =
+    (urlAccountId === "ALL" || !urlAccountId) && mounted;
 
   const handleAddTransaction = (payload: TransactionFormPayload) => {
     createTransaction.mutate(payload as CreateTransactionRequest, {
@@ -150,16 +173,16 @@ function TransactionsPageContent() {
       <div className="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
         <div className="bg-background border border-primary p-6 md:p-8 flex flex-col gap-8">
           <div className="min-w-0">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-[16px] md:text-[18px]">
                 ACCOUNT
               </h3>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center">
                 <button
                   onClick={() => setIsTransferModalOpen(true)}
                   disabled={isTransferDisabled}
                   title="TRANSFER"
-                  className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="border border-primary px-4 py-3 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex-1 sm:flex-none"
                 >
                   <ArrowLeftRight className="w-4 h-4" />
                   TRANSFER
@@ -168,25 +191,28 @@ function TransactionsPageContent() {
                   onClick={() => setIsModalOpen(true)}
                   disabled={isNewTransactionDisabled}
                   title="NEW_TRANSACTION"
-                  className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="border border-primary px-4 py-3 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex-1 sm:flex-none"
                 >
                   <Plus className="w-4 h-4" />
                   NEW_TRANSACTION
                 </button>
               </div>
             </div>
-            <div className="flex items-stretch gap-2">
+            {/* Mobile: selector full-width, ADD_ACCOUNT tombol kompak di bawah
+                (h-12), bukan button raksasa yang stretch setinggi selector.
+                Desktop: kembali ke baris samping (md:self-stretch). */}
+            <div className="flex flex-col md:flex-row items-stretch gap-2">
               <div className="flex-1 min-w-0">
                 <AccountSelector
                   accounts={accounts}
                   selectedId={urlAccountId}
                   onSelect={handleSelectAccount}
-                  disabled={isLoadingAccounts}
+                  disabled={mounted && isLoadingAccounts}
                 />
               </div>
               <button
                 onClick={() => setIsAddAccountModalOpen(true)}
-                className="border border-primary px-4 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                className="border border-primary px-4 h-12 md:h-auto font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 ADD_ACCOUNT
@@ -199,8 +225,8 @@ function TransactionsPageContent() {
               TIMELINE_FILTER
             </h3>
             <TimelineFilter
-              months={MONTHS}
               selectedMonth={selectedMonth}
+              cycleStartDay={cycleStartDay}
               onSelect={setSelectedMonth}
             />
           </div>

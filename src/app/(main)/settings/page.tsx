@@ -29,6 +29,7 @@ import {
   useRemoveMember,
 } from "@/hooks/useFamilyMutations";
 import { useUserAccount, useUpdateUserAccount } from "@/hooks/useUserAccount";
+import { useCycle, useUpdateCycle } from "@/hooks/useCycle";
 import type { CreateFamilyRequest, JoinFamilyRequest, Title } from "@/hooks/types";
 
 type TabId = "profile" | "family" | "app";
@@ -75,6 +76,8 @@ function SettingsPageContent() {
 
   const { data: userAccount, isLoading: userLoading } = useUserAccount();
   const updateUserAccount = useUpdateUserAccount();
+  const { data: cycle, isLoading: cycleLoading } = useCycle();
+  const updateCycle = useUpdateCycle();
   const { data: family, isLoading: familyLoading } = useMyFamily();
   const { data: members = [], isLoading: membersLoading } = useFamilyMembers();
   const createFamily = useCreateFamily();
@@ -98,6 +101,12 @@ function SettingsPageContent() {
     resolver: zodResolver(appSettingsSchema),
     defaultValues: { cycleStartDay: 1 },
   });
+
+  useEffect(() => {
+    if (cycle) {
+      appForm.reset({ cycleStartDay: cycle.cycleStartDay });
+    }
+  }, [cycle, appForm]);
   const createFamilyForm = useForm<CreateFamilyInput, unknown, CreateFamilyRequest>({
     resolver: zodResolver(createFamilySchema),
     defaultValues: { name: "", title: "FATHER" },
@@ -115,6 +124,17 @@ function SettingsPageContent() {
   const handleProfileSave = (values: ProfileSettingsValues) => {
     updateUserAccount.mutate(
       { name: values.username },
+      {
+        onSuccess: () => {
+          showSaved();
+        },
+      }
+    );
+  };
+
+  const handleAppSave = (values: AppSettingsValues) => {
+    updateCycle.mutate(
+      { cycleStartDay: values.cycleStartDay },
       {
         onSuccess: () => {
           showSaved();
@@ -172,12 +192,12 @@ function SettingsPageContent() {
   return (
     <div className="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
       <div className="bg-background border border-primary p-6 md:p-8 flex flex-col gap-8">
-        <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+        <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-[16px] md:text-[18px]">
           SETTINGS
         </h3>
 
         <div className="flex flex-col md:flex-row gap-8">
-          <div className="flex md:flex-col gap-2 md:w-48 shrink-0">
+          <div className="flex flex-col md:w-48 shrink-0 gap-2">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -452,9 +472,15 @@ function SettingsPageContent() {
                 </div>
 
                 <form
-                  onSubmit={appForm.handleSubmit(() => showSaved())}
+                  onSubmit={appForm.handleSubmit(handleAppSave)}
                   className="flex flex-col gap-5"
                 >
+                  {updateCycle.error && (
+                    <p className="border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider">
+                      * {updateCycle.error.message}
+                    </p>
+                  )}
+
                   <div className="flex flex-col gap-2 max-w-xs">
                     <label
                       htmlFor="app-cycle-day"
@@ -469,7 +495,8 @@ function SettingsPageContent() {
                       max={25}
                       {...appForm.register("cycleStartDay", { valueAsNumber: true })}
                       required
-                      className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+                      disabled={cycleLoading || updateCycle.isPending}
+                      className="bg-background border border-outline-variant px-4 py-3 font-body-sm text-body-sm text-primary placeholder:text-outline focus:outline-none focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
                       START_DAY_OF_MONTHLY_CYCLE (1 - 25)
@@ -479,9 +506,10 @@ function SettingsPageContent() {
                   <div className="flex items-center justify-end gap-3 mt-2">
                     <button
                       type="submit"
-                      className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer"
+                      disabled={cycleLoading || updateCycle.isPending}
+                      className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      SAVE_CHANGES
+                      {updateCycle.isPending ? "SAVING..." : "SAVE_CHANGES"}
                     </button>
                   </div>
                 </form>

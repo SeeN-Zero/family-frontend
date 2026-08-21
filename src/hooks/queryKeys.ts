@@ -68,3 +68,8 @@ export const userAccountKeys = {
   all: ["userAccount"] as const,
   me: () => ["userAccount", "me"] as const,
 };
+
+export const cycleKeys = {
+  all: ["cycle"] as const,
+  me: () => ["cycle", "me"] as const,
+};

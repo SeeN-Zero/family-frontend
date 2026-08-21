@@ -18,9 +18,9 @@ export default function MainLayout({
     <AuthGuard>
       <AppHeader />
 
-      <div className="flex flex-1 h-full min-h-0 w-full relative overflow-hidden pt-16 pb-14">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 md:h-[calc(100dvh-4rem)] w-full relative pt-16">
         <Sidebar />
-        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 min-w-0 min-h-0 md:overflow-y-auto overflow-x-hidden pb-32 md:pb-14">
           {children}
         </main>
       </div>

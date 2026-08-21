@@ -62,13 +62,13 @@ export default function LoanPage() {
     <>
       <div className="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
         <div className="bg-background border border-primary p-6 md:p-8 flex flex-col gap-8">
-          <div className="flex items-center justify-between">
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-[16px] md:text-[18px]">
               LOAN_MANAGEMENT
             </h3>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center gap-2 cursor-pointer"
+              className="border border-primary px-4 py-[14px] font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               NEW_LOAN_ENTRY
@@ -78,7 +78,7 @@ export default function LoanPage() {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handleTabChange("DEBT")}
-              className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border ${
+              className={`px-4 py-[14px] font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border ${
                 activeTab === "DEBT"
                   ? "bg-primary text-background border-primary"
                   : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
@@ -88,7 +88,7 @@ export default function LoanPage() {
             </button>
             <button
               onClick={() => handleTabChange("RECEIVABLE")}
-              className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border ${
+              className={`px-4 py-[14px] font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border ${
                 activeTab === "RECEIVABLE"
                   ? "bg-primary text-background border-primary"
                   : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
@@ -99,10 +99,10 @@ export default function LoanPage() {
           </div>
 
           <div className="overflow-x-auto max-h-[480px] overflow-y-auto bg-background">
-            <table className="w-full min-w-[900px] text-left border-collapse">
+            <table className="w-full min-w-[400px] md:min-w-[900px] text-left border-collapse">
               <thead className="sticky top-0 bg-background">
                 <tr className="border-b border-dotted border-outline-variant">
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant">
                     CONTACT
                   </th>
                   <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
@@ -117,16 +117,16 @@ export default function LoanPage() {
                   <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant hidden lg:table-cell">
                     DESCRIPTION
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
                     AMOUNT
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
+                  <th className="py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
                     REMAINING
                   </th>
                   <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
                     TRANSACTION_DATE
                   </th>
-                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-center w-24">
+                  <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-center w-16 md:w-24">
                     ACT
                   </th>
                 </tr>
@@ -178,36 +178,36 @@ export default function LoanPage() {
                             : "hover:bg-surface-variant"
                         }`}
                       >
-                        <td className="py-4 px-4 whitespace-nowrap">
+                        <td className="py-4 px-2 md:px-4 truncate max-w-[90px] md:max-w-none whitespace-nowrap">
                           {loan.contactName}
                         </td>
-                        <td className="py-4 px-4 hidden md:table-cell">
+                        <td className="py-4 px-2 md:px-4 hidden md:table-cell">
                           {loan.accountName}
                         </td>
-                        <td className="py-4 px-4 hidden md:table-cell">
-                          <span className="border border-outline-variant px-2 py-1 text-[10px] font-label-caps uppercase tracking-wider text-on-surface-variant">
+                        <td className="py-4 px-2 md:px-4 hidden md:table-cell">
+                          <span className="border border-outline-variant px-2 py-1 font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">
                             {loan.loanType}
                           </span>
                         </td>
-                        <td className="py-4 px-4 hidden md:table-cell">
-                          <span className="border border-outline-variant px-2 py-1 text-[10px] font-label-caps uppercase tracking-wider text-on-surface-variant">
+                        <td className="py-4 px-2 md:px-4 hidden md:table-cell">
+                          <span className="border border-outline-variant px-2 py-1 font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">
                             {loan.status}
                           </span>
                         </td>
-                        <td className="py-4 px-4 hidden lg:table-cell truncate max-w-[150px] md:max-w-xs">
+                        <td className="py-4 px-2 md:px-4 hidden lg:table-cell truncate max-w-[150px] md:max-w-xs">
                           {loan.description || "—"}
                         </td>
-                        <td className="py-4 px-4 text-right whitespace-nowrap">
+                        <td className="py-4 px-2 md:px-4 text-right whitespace-nowrap">
                           {formatCurrency(loan.amount)}
                         </td>
-                        <td className="py-4 px-4 text-right whitespace-nowrap">
+                        <td className="py-4 px-2 md:px-4 text-right whitespace-nowrap">
                           {formatCurrency(loan.remainingAmount)}
                         </td>
-                        <td className="py-4 px-4 hidden md:table-cell whitespace-nowrap">
+                        <td className="py-4 px-2 md:px-4 hidden md:table-cell whitespace-nowrap">
                           {formatShortDate(loan.transactionDate)}
                         </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="py-4 px-2 md:px-4">
+                          <div className="flex items-center justify-center gap-1 md:gap-2">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -215,7 +215,7 @@ export default function LoanPage() {
                                 setSelectedLoanId(loan.loanId);
                               }}
                               title="VIEW_PAYMENTS"
-                              className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                              className="border border-outline-variant px-2 py-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
                             >
                               <Eye className="w-3 h-3" />
                             </button>
@@ -227,7 +227,7 @@ export default function LoanPage() {
                               }}
                               disabled={deleteLoan.isPending}
                               title="DELETE_LOAN"
-                              className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="border border-outline-variant px-2 py-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>

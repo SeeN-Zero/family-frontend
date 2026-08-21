@@ -6,18 +6,21 @@ const spaceMono = Space_Mono({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-space-mono",
+  preload: false,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400"],
   variable: "--font-jetbrains-mono",
+  preload: false,
 });
 
 const courierPrime = Courier_Prime({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-courier-prime",
+  preload: false,
 });
 
 export default function RootLayout({
@@ -30,7 +33,7 @@ export default function RootLayout({
       className={`${spaceMono.variable} ${jetbrainsMono.variable} ${courierPrime.variable}`}
       lang="en"
     >
-      <body className="bg-background text-on-surface h-screen w-full flex flex-col pixel-dither-bg overflow-hidden">
+      <body className="bg-background text-on-surface min-h-dvh w-full flex flex-col pixel-dither-bg">
         <Providers>{children}</Providers>
       </body>
     </html>

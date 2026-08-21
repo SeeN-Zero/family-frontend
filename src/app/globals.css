@@ -25,6 +25,14 @@
   --font-body-sm: var(--font-jetbrains-mono);
   --font-body-lg: var(--font-jetbrains-mono);
   --font-label-caps: var(--font-courier-prime);
+
+  /* Mobile-friendly type scale (Material / Apple HIG)
+     label-caps 12px = tight caps label, body-sm 14px = table/body,
+     body-lg 16px = base, display-lg 24px = headline amounts. */
+  --text-label-caps: 12px;
+  --text-body-sm: 14px;
+  --text-body-lg: 16px;
+  --text-display-lg: 24px;
 }
 
 /* Pixel Dither Pattern Background */

@@ -56,7 +56,7 @@ export default function ContactFormModal({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center p-3 -m-3 text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Close form"
           >
             <X className="w-5 h-5" />
@@ -170,14 +170,14 @@ export default function ContactFormModal({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-outline-variant px-4 py-[14px] font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-primary px-4 py-[14px] font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isPending ? "SAVING..." : isEdit ? "UPDATE_CONTACT" : "CREATE_CONTACT"}
             </button>

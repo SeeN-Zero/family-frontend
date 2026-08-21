@@ -1,6 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -167,32 +173,53 @@ function LoginContent() {
   }, [router, searchParams, reset]);
 
   // Render built-in Google button (proven to work) themed & centered.
-  useEffect(() => {
+  // Ukuran dihitung dari lebar container asli (ResizeObserver) sehingga tombol
+  // GSI tidak pernah melebihi viewport pada layar sempit; fallback 320px.
+  // useLayoutEffect agar clientWidth sudah ter-layout sebelum renderButton
+  // dipanggil (useEffect biasa akan membaca 0 lalu jatuh ke fallback 320).
+  useLayoutEffect(() => {
     const container = buttonContainerRef.current;
     const gsi = gsiRef.current;
     if (!gsiReady || !gsi || !container) return;
 
-    container.innerHTML = "";
-    const width = Math.min(container.clientWidth || 320, 320);
-    gsi.renderButton(container, {
-      theme: "filled_black",
-      size: "large",
-      text: "continue_with",
-      shape: "rectangular",
-      logo_alignment: "left",
-      width,
+    const render = () => {
+      const rect = container.getBoundingClientRect();
+      container.dataset.gsi = JSON.stringify({
+        cw: container.clientWidth,
+        ow: container.offsetWidth,
+        rw: Math.round(rect.width),
+        dl: getComputedStyle(container).display,
+      });
+      container.innerHTML = "";
+      const width = Math.min(container.clientWidth || 320, 320);
+      gsi.renderButton(container, {
+        theme: "filled_black",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        logo_alignment: "left",
+        width,
+      });
+    };
+
+    render();
+
+    const ro = new ResizeObserver(() => {
+      render();
     });
+    ro.observe(container);
+    return () => ro.disconnect();
   }, [gsiReady]);
 
   return (
     <>
       <Header title="SEEN FAMILY" />
-      <main className="pixel-dither-bg flex-grow flex items-center justify-center p-margin-mobile md:p-margin-desktop relative z-10">
-        <div className="bracket-corners relative w-full max-w-md">
+      <main className="pixel-dither-bg flex-grow flex items-center justify-center px-4 py-6 md:p-margin-desktop relative z-10">
+        <div className="bracket-corners relative w-full max-w-[95vw] sm:max-w-md">
           <div className="bracket-corners-inner">
-            <div className="border-2 border-primary bg-surface p-8 md:p-12 flex flex-col items-center justify-center shadow-[4px_4px_0px_0px_#303030]">
-              <div className="text-center mb-12 w-full">
-                <h1 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary uppercase tracking-tighter mb-4">
+            <div className="border-2 border-primary bg-surface p-4 sm:p-6 md:p-12 flex flex-col items-center justify-center shadow-[4px_4px_0px_0px_#303030]">
+              <div className="text-center mb-8 md:mb-12 w-full">
+                <h1 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary uppercase tracking-tighter mb-4 break-words">
                   SEEN FAMILY FINANCE SYSTEM
                 </h1>
 
@@ -204,31 +231,31 @@ function LoginContent() {
 
               <div className="w-full flex flex-col items-center gap-4">
                 {error && (
-                  <p className="w-full border border-primary bg-surface px-4 py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider text-center">
+                  <p className="w-full border border-primary bg-surface px-3 md:px-4 py-2 md:py-3 font-label-caps text-label-caps text-primary uppercase tracking-wider text-center break-words">
                     * {error}
                   </p>
                 )}
 
-                <div className="relative w-full max-w-[320px] min-h-[48px] flex items-center justify-center">
+                <div className="relative w-full max-w-[280px] min-h-[48px] flex items-center justify-center">
                   {isLoading ? (
-                    <div className="w-full flex items-center justify-center border-2 border-primary bg-surface text-primary px-6 py-4 shadow-[4px_4px_0px_0px_#303030]">
-                      <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                    <div className="w-full flex items-center justify-center border-2 border-primary bg-surface text-primary px-4 md:px-6 py-3 md:py-4 shadow-[4px_4px_0px_0px_#303030]">
+                      <Loader2 className="w-4 md:w-5 h-4 md:h-5 animate-spin mr-2 md:mr-3" />
                       <span className="font-label-caps text-label-caps uppercase tracking-wider">
                         PROCESSING...
                       </span>
                     </div>
                   ) : gsiReady ? (
                     <div className="w-full flex justify-center">
-                      <div className="border-2 border-primary bg-surface p-1.5 shadow-[4px_4px_0px_0px_#303030]">
+                      <div className="border-2 border-primary bg-surface p-1.5 shadow-[4px_4px_0px_0px_#303030] max-w-full overflow-hidden">
                         <div
                           ref={buttonContainerRef}
-                          className="w-[320px] max-w-full"
+                          className="w-full max-w-[280px]"
                         />
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full flex items-center justify-center border-2 border-primary bg-surface text-primary px-6 py-4 shadow-[4px_4px_0px_0px_#303030]">
-                      <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                    <div className="w-full flex items-center justify-center border-2 border-primary bg-surface text-primary px-3 md:px-6 py-3 md:py-4 shadow-[4px_4px_0px_0px_#303030]">
+                      <Loader2 className="w-4 md:w-5 h-4 md:h-5 animate-spin mr-2 md:mr-3" />
                       <span className="font-label-caps text-label-caps uppercase tracking-wider">
                         LOADING GOOGLE BUTTON...
                       </span>
@@ -237,8 +264,8 @@ function LoginContent() {
                 </div>
               </div>
 
-              <div className="mt-12 w-full flex justify-between items-end border-t border-dotted border-outline-variant pt-4">
-                <span className="font-body-sm text-body-sm text-outline-variant text-[10px]">
+              <div className="mt-8 md:mt-12 w-full flex justify-between items-end border-t border-dotted border-outline-variant pt-3 md:pt-4">
+                <span className="font-body-sm text-body-sm text-outline-variant">
                   SYS_STATUS: ONLINE
                 </span>
 

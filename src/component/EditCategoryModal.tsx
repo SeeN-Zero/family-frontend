@@ -57,7 +57,7 @@ export default function EditCategoryModal({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40"
+            className="flex items-center justify-center p-3 -m-3 text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40"
             aria-label="Close form"
           >
             <X className="w-5 h-5" />
@@ -101,7 +101,7 @@ export default function EditCategoryModal({
                     key={opt.name}
                     type="button"
                     onClick={() => form.setValue("icon", opt.name, { shouldDirty: true, shouldValidate: true })}
-                    className={`flex items-center justify-center aspect-square border transition-colors cursor-pointer ${
+                    className={`flex items-center justify-center w-11 h-11 border transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-primary text-background border-primary"
                         : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
@@ -126,7 +126,7 @@ export default function EditCategoryModal({
                     key={opt.name}
                     type="button"
                     onClick={() => form.setValue("color", opt.hex, { shouldDirty: true, shouldValidate: true })}
-                    className={`aspect-square border-2 transition-colors cursor-pointer flex items-center justify-center ${opt.className} ${
+                    className={`w-11 h-11 border-2 transition-colors cursor-pointer flex items-center justify-center ${opt.className} ${
                       isSelected
                         ? "border-primary"
                         : "border-transparent hover:border-outline-variant"
@@ -144,14 +144,14 @@ export default function EditCategoryModal({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-outline-variant px-4 py-[14px] font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-primary px-4 py-[14px] font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isPending ? "SAVING..." : "UPDATE_CATEGORY"}
             </button>

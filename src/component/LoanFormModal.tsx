@@ -87,7 +87,7 @@ export default function LoanFormModal({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center p-3 -m-3 text-outline-variant hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Close form"
           >
             <X className="w-5 h-5" />
@@ -113,7 +113,7 @@ export default function LoanFormModal({
                 type="button"
                 onClick={() => form.setValue("loanType", "DEBT", { shouldDirty: true, shouldValidate: true })}
                 disabled={isPending}
-                className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`px-4 py-[14px] font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
                   type === "DEBT"
                     ? "bg-primary text-background border-primary"
                     : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
@@ -125,7 +125,7 @@ export default function LoanFormModal({
                 type="button"
                 onClick={() => form.setValue("loanType", "RECEIVABLE", { shouldDirty: true, shouldValidate: true })}
                 disabled={isPending}
-                className={`px-4 py-2 font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`px-4 py-[14px] font-label-caps text-label-caps uppercase tracking-wider transition-colors cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
                   type === "RECEIVABLE"
                     ? "bg-primary text-background border-primary"
                     : "bg-background text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
@@ -300,14 +300,14 @@ export default function LoanFormModal({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="border border-outline-variant px-4 py-2 font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-outline-variant px-4 py-[14px] font-label-caps text-label-caps text-on-surface-variant bg-background hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="border border-primary px-4 py-2 font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-primary px-4 py-[14px] font-label-caps text-label-caps text-background bg-primary hover:bg-background hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isPending ? "SAVING..." : "SAVE_ENTRY"}
             </button>

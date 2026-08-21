@@ -179,6 +179,14 @@ export type UpdateUserAccountRequest = {
   name: string;
 };
 
+export type ApiCycle = {
+  cycleStartDay: number;
+};
+
+export type UpdateCycleRequest = {
+  cycleStartDay: number;
+};
+
 // ---------------------------------------------------------------------------
 // Filter types
 // ---------------------------------------------------------------------------

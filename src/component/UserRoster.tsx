@@ -47,7 +47,7 @@ export default function UserRoster({
         <span>FAMILY MEMBERS</span>
         <Link
           href="/settings?tab=family"
-          className="text-on-surface-variant hover:text-primary transition-colors"
+          className="flex items-center justify-center p-3.5 text-on-surface-variant hover:text-primary transition-colors shrink-0"
           title="Go to Family Settings"
         >
           <ArrowRight className="w-4 h-4" />
@@ -76,7 +76,7 @@ export default function UserRoster({
           </div>
           <Link
             href="/settings?tab=family"
-            className="border border-primary px-4 py-2 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors"
+            className="border border-primary px-4 py-3.5 font-label-caps text-label-caps text-primary bg-background hover:bg-primary hover:text-background transition-colors"
           >
             FAMILY_SETTINGS
           </Link>

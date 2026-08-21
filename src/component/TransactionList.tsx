@@ -29,22 +29,22 @@ export default function TransactionsList({
 
   return (
     <div className="overflow-x-auto max-h-[480px] overflow-y-auto bg-background">
-      <table className="w-full min-w-[760px] text-left border-collapse">
+      <table className="w-full min-w-[400px] md:min-w-[760px] text-left border-collapse">
         <thead className="sticky top-0 bg-background z-10">
           <tr className="border-b border-dotted border-outline-variant">
-            <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+            <th className="py-3 md:py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant">
               DATE
             </th>
-            <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant">
+            <th className="py-3 md:py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant">
               DESCRIPTION
             </th>
-            <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
+            <th className="py-3 md:py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant hidden md:table-cell">
               CATEGORY
             </th>
-            <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
+            <th className="py-3 md:py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant text-right">
               AMOUNT
             </th>
-            <th className="py-4 px-4 font-label-caps text-label-caps text-on-surface-variant text-center w-24">
+            <th className="py-3 md:py-4 px-2 md:px-4 font-label-caps text-label-caps text-on-surface-variant text-center w-16 md:w-24">
               ACT
             </th>
           </tr>
@@ -54,7 +54,7 @@ export default function TransactionsList({
             <tr>
               <td
                 colSpan={5}
-                className="py-8 px-4 text-center text-on-surface-variant"
+                className="py-8 px-2 md:px-4 text-center text-on-surface-variant"
               >
                 LOADING_TRANSACTIONS...
               </td>
@@ -63,7 +63,7 @@ export default function TransactionsList({
 
           {!isLoading && errorMessage && (
             <tr>
-              <td colSpan={5} className="py-8 px-4 text-center text-primary">
+              <td colSpan={5} className="py-8 px-2 md:px-4 text-center text-primary">
                 * {errorMessage}
               </td>
             </tr>
@@ -73,7 +73,7 @@ export default function TransactionsList({
             <tr>
               <td
                 colSpan={5}
-                className="py-8 px-4 text-center text-on-surface-variant"
+                className="py-8 px-2 md:px-4 text-center text-on-surface-variant"
               >
                 NO_TRANSACTIONS
               </td>
@@ -92,30 +92,30 @@ export default function TransactionsList({
                   key={tx.transactionId}
                   className="hover:bg-surface-variant transition-colors border-b border-dotted border-outline-variant last:border-b-0"
                 >
-                  <td className="py-4 px-4 whitespace-nowrap">
+                  <td className="py-3 md:py-4 px-2 md:px-4 whitespace-nowrap">
                     {formatShortDate(tx.transactionDate)}
                   </td>
-                  <td className="py-4 px-4 truncate max-w-[180px] md:max-w-xs">
+                  <td className="py-3 md:py-4 px-2 md:px-4 truncate max-w-[120px] md:max-w-[180px]">
                     {description || "NO_DESCRIPTION"}
                   </td>
-                  <td className="py-4 px-4 hidden md:table-cell">
-                    <span className="border border-outline-variant px-2 py-1 text-[10px] font-label-caps uppercase tracking-wider text-on-surface-variant">
+                  <td className="py-3 md:py-4 px-2 md:px-4 hidden md:table-cell">
+                    <span className="border border-outline-variant px-2 py-1 font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">
                       {tx.categoryName}
                     </span>
                   </td>
                   <td
-                    className={`py-4 px-4 text-right whitespace-nowrap ${
+                    className={`py-3 md:py-4 px-2 md:px-4 text-right whitespace-nowrap ${
                       isPositive ? "text-income" : "text-expense"
                     }`}
                   >
                     {formatSignedCurrency(tx.amount, isPositive)}
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-center gap-2">
+                  <td className="py-3 md:py-4 px-2 md:px-4">
+                    <div className="flex items-center justify-center gap-1 md:gap-2">
                       <button
                         type="button"
                         onClick={() => onEdit?.(tx)}
-                        className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                        className="border border-outline-variant px-1.5 md:px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
                         title="EDIT_TRANSACTION"
                       >
                         <Pencil className="w-3 h-3" />
@@ -123,7 +123,7 @@ export default function TransactionsList({
                       <button
                         type="button"
                         onClick={() => onDelete?.(tx)}
-                        className="border border-outline-variant px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                        className="border border-outline-variant px-1.5 md:px-2 py-1 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer"
                         title="DELETE_TRANSACTION"
                       >
                         <X className="w-3 h-3" />
