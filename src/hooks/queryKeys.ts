@@ -73,3 +73,17 @@ export const cycleKeys = {
   all: ["cycle"] as const,
   me: () => ["cycle", "me"] as const,
 };
+
+export const reportKeys = {
+  all: ["reports"] as const,
+  summary: (filter: { accountId?: string; dateFrom: string; dateTo: string }) =>
+    ["reports", "summary", filter] as const,
+  categoryBreakdown: (filter: {
+    accountId?: string;
+    dateFrom: string;
+    dateTo: string;
+    type: "INCOME" | "EXPENSE";
+  }) => ["reports", "category-breakdown", filter] as const,
+  trend: (periods: { label: string; dateFrom: string; dateTo: string }[]) =>
+    ["reports", "trend", periods] as const,
+};

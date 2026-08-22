@@ -126,3 +126,22 @@ export function cycleRange(
 
   return { from: formatISO(start), to: formatISO(end) };
 }
+
+/**
+ * Bangun daftar `count` cycle terakhir (termasuk cycle bulan berjalan) dengan
+ * urutan lama → baru. Tiap item = label "MMM YY" + range ISO, cocok untuk
+ * payload /reports/trend.
+ */
+export function lastCyclePeriods(
+  count: number,
+  cycleStartDay: number,
+  currentLabel: string
+): { label: string; dateFrom: string; dateTo: string }[] {
+  const periods: { label: string; dateFrom: string; dateTo: string }[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const label = shiftMonthLabel(currentLabel, -i);
+    const range = cycleRange(label, cycleStartDay);
+    if (range) periods.push({ label, dateFrom: range.from, dateTo: range.to });
+  }
+  return periods;
+}

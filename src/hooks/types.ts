@@ -188,6 +188,43 @@ export type UpdateCycleRequest = {
 };
 
 // ---------------------------------------------------------------------------
+// Reports
+// ---------------------------------------------------------------------------
+
+export type ApiCategoryBreakdown = {
+  categoryId: string;
+  categoryName: string;
+  icon: string | null;
+  color: string | null;
+  totalAmount: number;
+  transactionCount: number;
+};
+
+export type ApiReportSummary = {
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
+};
+
+export type ApiTrendPoint = {
+  label: string;
+  totalIncome: number;
+  totalExpense: number;
+};
+
+export type ReportPeriod = {
+  label: string;
+  dateFrom: string;
+  dateTo: string;
+};
+
+export type ReportFilter = {
+  accountId?: string;
+  dateFrom: string;
+  dateTo: string;
+};
+
+// ---------------------------------------------------------------------------
 // Filter types
 // ---------------------------------------------------------------------------
 

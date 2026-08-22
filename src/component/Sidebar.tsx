@@ -11,6 +11,7 @@ import {
   HandCoins,
   Tags,
   ContactRound,
+  BarChart3,
 } from "lucide-react";
 import { useSidebarStore } from "@/stores/sidebar-store";
 
@@ -21,6 +22,7 @@ const MENU_ITEMS = [
   { label: "ACCOUNT", icon: Wallet, href: "/account" },
   { label: "CATEGORY", icon: Tags, href: "/category" },
   { label: "CONTACT", icon: ContactRound, href: "/contact" },
+  { label: "REPORTS", icon: BarChart3, href: "/reports" },
   { label: "SETTINGS", icon: Settings, href: "/settings" },
 ];
 
